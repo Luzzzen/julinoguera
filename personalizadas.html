@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tortas personalizadas y mesas dulces · Juli Noguera</title>
+  <meta name="description" content="Tortas personalizadas en buttercream y mesas dulces para eventos. Consultá precios de referencia y pedí tu presupuesto por WhatsApp.">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <!-- ===== Encabezado ===== -->
+  <header class="encabezado">
+    <a href="index.html" class="encabezado-logo"><img src="img/logo-oscuro.svg" alt="Juli Noguera" width="60" height="56"></a>
+    <nav class="encabezado-nav" aria-label="Principal">
+      <a href="tienda.html">Tienda</a>
+      <a href="personalizadas.html" aria-current="page">Personalizadas</a>
+    </nav>
+  </header>
+
+  <main class="contenido">
+
+    <!-- ===== Intro ===== -->
+    <section class="bloque-intro">
+      <h1>Tortas personalizadas</h1>
+      <p>Tortas de buttercream de un solo piso, diseñadas a partir de tu idea. Acá podés ver precios de referencia según el tamaño; el presupuesto final lo charlamos por WhatsApp.</p>
+    </section>
+
+    <!-- ===== Condiciones ===== -->
+    <ul class="condiciones">
+      <li><strong data-sena></strong><span>de seña para confirmar</span></li>
+      <li><strong><span data-anticipacion></span> días</strong><span>de anticipación mínima</span></li>
+      <li><strong>Buttercream</strong><span>un solo piso</span></li>
+    </ul>
+
+    <!-- ===== Referencia de precios ===== -->
+    <section class="panel" aria-labelledby="titulo-ref">
+      <h2 id="titulo-ref">Precio de referencia</h2>
+      <form id="form-referencia">
+        <fieldset class="grupo">
+          <legend>Tamaño</legend>
+          <div class="opciones" id="ref-tamanos"></div>
+        </fieldset>
+        <fieldset class="grupo">
+          <legend>Rellenos <span class="grupo-ayuda" id="ref-ayuda"></span></legend>
+          <div class="opciones" id="ref-rellenos"></div>
+        </fieldset>
+      </form>
+
+      <dl class="totales">
+        <div class="total"><dt>Desde</dt><dd id="ref-precio"></dd></div>
+        <div><dt>Seña (<span data-sena></span>)</dt><dd id="ref-sena"></dd></div>
+      </dl>
+      <p class="nota">El precio final depende del diseño. Escribinos con tu idea y te mandamos el presupuesto.</p>
+      <a id="ref-wa" class="boton boton-wa" href="#" target="_blank" rel="noopener">Pedir presupuesto por WhatsApp</a>
+    </section>
+
+    <!-- ===== Mesas dulces ===== -->
+    <section class="panel panel-acento" aria-labelledby="titulo-mesas">
+      <h2 id="titulo-mesas">Mesas dulces y eventos</h2>
+      <p>Para cumpleaños, bautismos, casamientos o cualquier festejo donde necesites varias cosas juntas. Contanos la fecha, cuántas personas son y qué te imaginás, y armamos un presupuesto a medida.</p>
+      <a class="boton boton-wa" data-wa="¡Hola Juli! Quiero consultar por una mesa dulce para un evento.&#10;Fecha: &#10;Cantidad de personas: &#10;Idea: ">Consultar por WhatsApp</a>
+    </section>
+
+    <p class="volver"><a href="tienda.html">¿Lo necesitás en 24 hs? Mirá la tienda →</a></p>
+  </main>
+
+  <!-- ===== Pie ===== -->
+  <footer class="pie">
+    <p>Retiro en <span data-direccion></span> · © <span id="anio"></span> Juli Noguera</p>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/productos.js"></script>
+  <script src="js/comun.js"></script>
+  <script src="js/personalizadas.js"></script>
+</body>
+</html>

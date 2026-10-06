@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tienda · Juli Noguera</title>
+  <meta name="description" content="Tortas, desayunos, mini postres, tartas, budines, alfajores y masitas. Pedidos con 24 hs de anticipación, retiro o envío.">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <!-- ===== Encabezado ===== -->
+  <header class="encabezado">
+    <a href="index.html" class="encabezado-logo"><img src="img/logo-oscuro.svg" alt="Juli Noguera" width="60" height="56"></a>
+    <nav class="encabezado-nav" aria-label="Principal">
+      <a href="tienda.html" aria-current="page">Tienda</a>
+      <a href="personalizadas.html">Personalizadas</a>
+    </nav>
+    <button id="btn-carrito" class="btn-carrito" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 8h14l-1.2 11.1a2 2 0 0 1-2 1.9H8.2a2 2 0 0 1-2-1.9L5 8Zm4 0V6.5a3 3 0 0 1 6 0V8"/></svg>
+      <span id="carrito-cantidad" class="badge" hidden>0</span>
+    </button>
+  </header>
+
+  <!-- ===== Intro y categorías ===== -->
+  <div class="tienda-intro">
+    <h1>Tienda</h1>
+    <p>Todo se prepara con <strong>24 hs de anticipación</strong>. Armá tu pedido, elegí fecha y si lo retirás o te lo enviamos, y lo confirmamos por WhatsApp.</p>
+  </div>
+
+  <nav id="categorias" class="categorias" aria-label="Categorías"></nav>
+
+  <!-- ===== Catálogo ===== -->
+  <main id="catalogo" class="catalogo"></main>
+
+  <aside class="aviso-personalizadas">
+    <p>¿Buscás una torta personalizada o una mesa dulce para un evento?</p>
+    <a class="boton boton-secundario" href="personalizadas.html">Ver personalizadas</a>
+  </aside>
+
+  <!-- ===== Pie ===== -->
+  <footer class="pie">
+    <p>Retiro en <span data-direccion></span> · © <span id="anio"></span> Juli Noguera</p>
+  </footer>
+
+  <!-- ===== Configurador de producto ===== -->
+  <dialog id="configurador" class="hoja" aria-label="Elegir opciones"></dialog>
+
+  <!-- ===== Carrito ===== -->
+  <dialog id="carrito" class="hoja hoja-lateral" aria-labelledby="titulo-carrito">
+    <div class="hoja-contenido">
+      <form method="dialog"><button class="cerrar" aria-label="Cerrar">×</button></form>
+      <div class="hoja-cuerpo">
+        <h2 id="titulo-carrito">Tu pedido</h2>
+        <div id="carrito-cuerpo"></div>
+      </div>
+      <div id="carrito-pie" class="hoja-pie hoja-pie-columna">
+        <dl class="totales">
+          <div><dt>Subtotal</dt><dd id="subtotal"></dd></div>
+          <div id="fila-envio" hidden><dt>Envío</dt><dd id="costo-envio"></dd></div>
+          <div class="total"><dt>Total</dt><dd id="total"></dd></div>
+        </dl>
+        <p id="aviso-pedido" class="aviso-error" role="alert" hidden></p>
+        <button id="enviar-pedido" type="button" class="boton boton-wa">Enviar pedido por WhatsApp</button>
+        <button id="vaciar" type="button" class="enlace">Vaciar pedido</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ===== Aviso ===== -->
+  <div id="toast" class="toast" role="status" hidden>
+    <span></span>
+    <button type="button">Ver pedido</button>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/productos.js"></script>
+  <script src="js/comun.js"></script>
+  <script src="js/tienda.js"></script>
+</body>
+</html>
