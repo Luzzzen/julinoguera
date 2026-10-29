@@ -5,6 +5,15 @@ const pesos = new Intl.NumberFormat('es-AR', {
 });
 function formatoPrecio(n) { return pesos.format(n); }
 
+// Escapa texto que viene de la base antes de meterlo en el HTML
+function esc(t = '') {
+  return String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+// Texto con links estilo [texto](url): solo links internos o https
+function textoConLinks(t = '') {
+  return esc(t).replace(/\[([^\]]+)\]\(((?:https?:\/\/|[\w#.\/-])[^)\s]*)\)/g, '<a href="$2">$1</a>');
+}
+
 function linkWhatsApp(texto) {
   const base = 'https://wa.me/' + CONFIG.whatsapp;
   return texto ? base + '?text=' + encodeURIComponent(texto) : base;
@@ -22,7 +31,8 @@ const ICONO_WA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="curren
 
 /* ===== Inicio común ===== */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  if (window.CATALOGO) await CATALOGO;   // WhatsApp, dirección y envíos pueden venir de la base
   const wa = document.createElement('a');
   wa.className = 'wa-flotante';
   wa.href = linkWhatsApp('¡Hola Juli! Te escribo desde la web.');

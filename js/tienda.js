@@ -54,24 +54,22 @@ function esHabil(d) {
     && !CONFIG.diasCerrados.includes(d.getDay())
     && !CONFIG.fechasBloqueadas.includes(isoDe(d));
 }
-/* Porciones: la entrega es el viernes de cada semana y se publican el miércoles.
-   Devuelve la próxima entrega posible y si ya se puede pedir. */
+/* Productos de entrega semanal (porciones): se entregan el próximo día fijo
+   (el viernes) que respete la anticipación. Juli los prende y apaga desde el panel. */
 function entregaSemanal(prod) {
-  const s = prod.entregaFija.semanal;
-  const ahora = new Date();
   const fecha = hoy();
-  fecha.setDate(fecha.getDate() + (s.diaEntrega - fecha.getDay() + 7) % 7);
+  fecha.setDate(fecha.getDate() + (prod.entregaFija.diaEntrega - fecha.getDay() + 7) % 7);
   while (fecha < fechaMinima()) fecha.setDate(fecha.getDate() + 7);
-  const primera = deIso(s.primeraEntrega);
-  if (fecha < primera) fecha.setTime(primera.getTime());
-  const publicacion = new Date(fecha);
-  publicacion.setDate(publicacion.getDate() - (s.diaEntrega - s.diaPublicacion));
-  publicacion.setHours(s.horaPublicacion, 0, 0, 0);
-  return { fecha: isoDe(fecha), publicacion, disponible: ahora >= publicacion };
+  return { fecha: isoDe(fecha) };
 }
-function entregaFijaDisponible(prod) {
-  return !prod.entregaFija || entregaSemanal(prod).disponible;
+
+/* 'ok' | 'proximamente' | 'sinstock' */
+function estadoProducto(prod) {
+  if (prod.disponible === false) return prod.entregaFija ? 'proximamente' : 'sinstock';
+  if (prod.opciones.some(op => !op.valores.length)) return 'sinstock';
+  return 'ok';
 }
+const sePuedePedir = prod => estadoProducto(prod) === 'ok';
 
 /* ===== Opciones y precios ===== */
 
@@ -90,6 +88,11 @@ function cuantosElegir(prod, op, sel) {
   return v ? v.elegir : 0;
 }
 
+// Oferta: el porcentaje se aplica al producto (no a los adicionales)
+function conDescuento(prod, monto) {
+  return prod.descuento ? Math.round(monto * (100 - prod.descuento) / 100) : monto;
+}
+
 function precioUnitario(prod, sel, adic) {
   let total = prod.precio || 0;
   prod.opciones.forEach(op => {
@@ -97,17 +100,26 @@ function precioUnitario(prod, sel, adic) {
     const v = buscarValor(op, sel[op.id]);
     if (v && v.precio) total += v.precio;
   });
+  total = conDescuento(prod, total);
   adic.forEach(id => total += ADICIONALES[id].precio);
   return total;
 }
 
-function precioDesde(prod) {
+function precioLista(prod) {
   return prod.opciones.reduce((t, op) => {
     if (op.tipo !== 'unica' || op.visibleSi) return t;
     const precios = op.valores.map(v => v.precio).filter(p => p != null);
     return t + (precios.length ? Math.min(...precios) : 0);
   }, prod.precio || 0);
 }
+const precioDesde = prod => conDescuento(prod, precioLista(prod));
+
+function precioHTML(prod) {
+  const desde = tieneVariosPrecios(prod) ? '<small>desde </small>' : '';
+  const tachado = prod.descuento ? `<s>${formatoPrecio(precioLista(prod))}</s> ` : '';
+  return `<span class="precio">${desde}${tachado}${formatoPrecio(precioDesde(prod))}</span>`;
+}
+const ofertaHTML = prod => prod.descuento ? `<span class="cinta-oferta">Oferta −${prod.descuento}%</span>` : '';
 
 function tieneVariosPrecios(prod) {
   return prod.opciones.some(op => new Set(op.valores.map(v => v.precio).filter(p => p != null)).size > 1);
@@ -117,13 +129,13 @@ function tieneVariosPrecios(prod) {
 
 function galeriaHTML(prod) {
   if (!prod.fotos.length) {
-    return `<div class="galeria"><div class="galeria-pista"><div class="foto-vacia">${ICONO_BATIDOR}<span>Foto próximamente</span></div></div></div>`;
+    return `<div class="galeria">${ofertaHTML(prod)}<div class="galeria-pista"><div class="foto-vacia">${ICONO_BATIDOR}<span>Foto próximamente</span></div></div></div>`;
   }
-  const fotos = prod.fotos.map((src, i) => `<img src="${src}" alt="${prod.nombre}${prod.fotos.length > 1 ? ` · foto ${i + 1}` : ''}" loading="lazy" decoding="async">`).join('');
+  const fotos = prod.fotos.map((src, i) => `<img src="${esc(src)}" alt="${esc(prod.nombre)}${prod.fotos.length > 1 ? ` · foto ${i + 1}` : ''}" loading="lazy" decoding="async">`).join('');
   const puntos = prod.fotos.length > 1
     ? `<div class="galeria-puntos">${prod.fotos.map((_, i) => `<button type="button" data-foto="${i}" aria-label="Foto ${i + 1}"${i === 0 ? ' aria-current="true"' : ''}></button>`).join('')}</div>`
     : '';
-  return `<div class="galeria"><div class="galeria-pista">${fotos}</div>${puntos}</div>`;
+  return `<div class="galeria">${ofertaHTML(prod)}<div class="galeria-pista">${fotos}</div>${puntos}</div>`;
 }
 
 function activarGalerias(raiz) {
@@ -150,17 +162,21 @@ function renderCatalogo() {
 
   const categorias = CATEGORIAS.filter(c => PRODUCTOS.some(p => p.categoria === c.id));
 
-  nav.innerHTML = categorias.map(c => `<a href="#cat-${c.id}" data-cat="${c.id}">${c.nombre}</a>`).join('');
+  if (!categorias.length) {
+    contenedor.innerHTML = '<p class="catalogo-vacio">Estamos actualizando la tienda. Volvé en un rato o escribinos por WhatsApp.</p>';
+    return;
+  }
+  nav.innerHTML = categorias.map(c => `<a href="#cat-${c.id}" data-cat="${c.id}">${esc(c.nombre)}</a>`).join('');
 
   contenedor.innerHTML = categorias.map(c => `
     <section class="categoria" id="cat-${c.id}" aria-labelledby="titulo-${c.id}">
-      <h2 id="titulo-${c.id}">${c.nombre}</h2>
-      ${c.nota ? `<p class="categoria-nota">${c.nota}</p>` : ''}
+      <h2 id="titulo-${c.id}">${esc(c.nombre)}</h2>
+      ${c.nota ? `<p class="categoria-nota">${textoConLinks(c.nota)}</p>` : ''}
       <div class="grilla">
         ${PRODUCTOS.filter(p => p.categoria === c.id).map(tarjetaHTML).join('')}
-        ${c.cierre ? `<a class="tarjeta tarjeta-cierre" href="${c.cierre.href}">
-            <p>${c.cierre.texto}</p>
-            <span class="boton boton-secundario">${c.cierre.boton} →</span>
+        ${c.cierre && c.cierre.texto ? `<a class="tarjeta tarjeta-cierre" href="${esc(c.cierre.href)}">
+            <p>${esc(c.cierre.texto)}</p>
+            <span class="boton boton-secundario">${esc(c.cierre.boton)} →</span>
           </a>` : ''}
       </div>
     </section>`).join('');
@@ -181,26 +197,24 @@ function renderCatalogo() {
 }
 
 function tarjetaHTML(prod) {
-  const desde = tieneVariosPrecios(prod) ? 'desde ' : '';
-  const semana = prod.entregaFija ? entregaSemanal(prod) : null;
-  const disponible = !semana || semana.disponible;
-  const etiqueta = semana
-    ? `<span class="etiqueta">${disponible
-        ? 'Entrega: ' + textoFecha(semana.fecha)
-        : 'Se publican el ' + textoFecha(isoDe(semana.publicacion)).toLowerCase()}</span>`
-    : '';
-  const boton = disponible
+  const estado = estadoProducto(prod);
+  const ok = estado === 'ok';
+  let etiqueta = '';
+  if (estado === 'proximamente') etiqueta = 'Próximamente';
+  else if (estado === 'sinstock') etiqueta = 'Sin stock por ahora';
+  else if (prod.entregaFija) etiqueta = 'Entrega: ' + textoFecha(entregaSemanal(prod).fecha);
+  const boton = ok
     ? `<button class="boton boton-chico" type="button" data-producto="${prod.id}">Elegir</button>`
-    : `<button class="boton boton-chico" type="button" disabled>Próximamente</button>`;
+    : `<button class="boton boton-chico" type="button" disabled>${estado === 'proximamente' ? 'Próximamente' : 'Sin stock'}</button>`;
   return `
-    <article class="tarjeta${disponible ? ' tarjeta-clic' : ''}"${disponible ? ` data-abrir="${prod.id}"` : ''}>
+    <article class="tarjeta${ok ? ' tarjeta-clic' : ' tarjeta-off'}"${ok ? ` data-abrir="${prod.id}"` : ''}>
       ${galeriaHTML(prod)}
       <div class="tarjeta-cuerpo">
-        ${etiqueta}
-        <h3>${prod.nombre}</h3>
-        <p>${prod.descripcion}</p>
+        ${etiqueta ? `<span class="etiqueta">${etiqueta}</span>` : ''}
+        <h3>${esc(prod.nombre)}</h3>
+        <p>${esc(prod.descripcion)}</p>
         <div class="tarjeta-pie">
-          <span class="precio"><small>${desde}</small>${formatoPrecio(precioDesde(prod))}</span>
+          ${precioHTML(prod)}
           ${boton}
         </div>
       </div>
@@ -220,9 +234,9 @@ function abrirConfigurador(id) {
       <button class="cerrar" value="cerrar" aria-label="Cerrar">×</button>
       ${galeriaHTML(prod)}
       <div class="hoja-cuerpo">
-        <h2>${prod.nombre}</h2>
-        <p class="hoja-desc">${prod.descripcion}</p>
-        ${prod.nota ? `<p class="hoja-nota">${prod.nota}</p>` : ''}
+        <h2>${esc(prod.nombre)}</h2>
+        <p class="hoja-desc">${esc(prod.descripcion)}</p>
+        ${prod.nota ? `<p class="hoja-nota">${esc(prod.nota)}</p>` : ''}
         ${fechaFijaHTML(prod)}
         ${prod.opciones.map(op => opcionHTML(prod, op)).join('')}
         ${adicionalesHTML(prod)}
@@ -275,6 +289,7 @@ function abrirConfigurador(id) {
 
 function fechaFijaHTML(prod) {
   if (!prod.entregaFija) return '';
+  // (la fecha se calcula sola: el próximo día de entrega)
   const f = prod.entregaFija;
   const fecha = entregaSemanal(prod).fecha;
   return `<fieldset class="grupo" data-opcion="__fecha">
@@ -291,10 +306,10 @@ function fechaFijaHTML(prod) {
 function opcionHTML(prod, op) {
   if (op.tipo === 'cantidades') {
     return `<fieldset class="grupo" data-opcion="${op.id}">
-        <legend>${op.nombre} <span class="grupo-ayuda"></span></legend>
+        <legend>${esc(op.nombre)} <span class="grupo-ayuda"></span></legend>
         <ul class="lista-cantidades">
           ${op.valores.map(v => `<li>
-              <span>${v.nombre}</span>
+              <span>${esc(v.nombre)}</span>
               <div class="contador contador-chico">
                 <button type="button" data-op="${op.id}" data-sabor="${v.id}" data-delta="-1" aria-label="Uno menos de ${v.nombre}">−</button>
                 <output data-conteo="${v.id}">0</output>
@@ -311,21 +326,21 @@ function opcionHTML(prod, op) {
   const valores = op.valores.map((v, i) => {
     const marcado = preseleccion && i === 0 ? ' checked' : '';
     const extra = op.estilo === 'color' ? `<span class="muestra" style="--muestra:${v.hex}"></span>` : '';
-    const precio = v.precio != null && op.valores.length > 1 && !prod.precio ? `<small>${formatoPrecio(v.precio)}</small>` : '';
+    const precio = v.precio != null && op.valores.length > 1 && !prod.precio ? `<small>${formatoPrecio(conDescuento(prod, v.precio))}</small>` : '';
     return `<label class="opcion${op.estilo === 'color' ? ' opcion-color' : ''}">
         <input type="${tipoInput}" name="${op.id}" value="${v.id}"${marcado}>
-        ${extra}<span>${v.nombre}</span>${precio}
+        ${extra}<span>${esc(v.nombre)}</span>${precio}
       </label>`;
   }).join('');
 
   return `<fieldset class="grupo" data-opcion="${op.id}">
-      <legend>${op.nombre} <span class="grupo-ayuda"></span></legend>
+      <legend>${esc(op.nombre)} <span class="grupo-ayuda"></span></legend>
       <div class="opciones">${valores}</div>
     </fieldset>`;
 }
 
 function adicionalesHTML(prod) {
-  if (!prod.adicionales) return '';
+  if (!prod.adicionales || !prod.adicionales.length) return '';
   return `<fieldset class="grupo">
       <legend>Adicionales <span class="grupo-ayuda">opcional</span></legend>
       <div class="opciones">
@@ -333,7 +348,7 @@ function adicionalesHTML(prod) {
           const a = ADICIONALES[id];
           return `<label class="opcion">
             <input type="checkbox" name="adic" value="${id}">
-            <span>${a.nombre}</span><small>${a.precio ? '+ ' + formatoPrecio(a.precio) : 'cortesía'}</small>
+            <span>${esc(a.nombre)}</span><small>${a.precio ? '+ ' + formatoPrecio(a.precio) : 'cortesía'}</small>
           </label>`;
         }).join('')}
       </div>
@@ -447,7 +462,7 @@ function detalleItem(prod, sel, adic) {
    si el producto o una opción ya no existe, el ítem se descarta. */
 function itemVigente(item) {
   const prod = buscarProducto(item.id);
-  if (!prod || !entregaFijaDisponible(prod)) return null;
+  if (!prod || !sePuedePedir(prod)) return null;
   try {
     const ok = prod.opciones.every(op => {
       const v = item.sel[op.id];
@@ -535,7 +550,7 @@ function entregaFijaDelPedido() {
   const item = carrito.find(i => buscarProducto(i.id).entregaFija);
   if (!item) return null;
   const prod = buscarProducto(item.id);
-  return { ...prod.entregaFija, fecha: entregaSemanal(prod).fecha };
+  return { ...prod.entregaFija, fecha: entregaSemanal(prod).fecha, nombre: prod.nombre };
 }
 
 function franjasPara(modalidad, iso, fija) {
@@ -593,8 +608,8 @@ function renderCarrito() {
         return `
         <li class="item">
           <div class="item-info">
-            <strong>${v.prod.nombre}</strong>
-            ${v.detalle.map(d => `<span>${d}</span>`).join('')}
+            <strong>${esc(v.prod.nombre)}${v.prod.descuento ? ` <span class="mini-oferta">−${v.prod.descuento}%</span>` : ''}</strong>
+            ${v.detalle.map(d => `<span>${esc(d)}</span>`).join('')}
           </div>
           <div class="item-acciones">
             <div class="contador contador-chico">
@@ -618,7 +633,7 @@ function renderCarrito() {
         ${fija
           ? `<div class="fecha-fija">
                <strong>${textoFecha(fija.fecha)}</strong>
-               <small>Tu pedido incluye porciones, que se entregan solo ese día. Todo el pedido se entrega junto.</small>
+               <small>Tu pedido incluye ${esc(fija.nombre.toLowerCase())}, que se entrega solo ese día. Todo el pedido se entrega junto.</small>
              </div>`
           : `<div id="calendario" class="calendario"></div>`}
         <input type="hidden" name="fecha" value="${guardado.fecha || ''}">
@@ -840,7 +855,8 @@ function enviarPedido() {
     '',
     ...carrito.map(i => {
       const v = itemVigente(i);
-      return `• ${i.cantidad} × ${v.prod.nombre} — ${formatoPrecio(v.precio * i.cantidad)}\n   ${v.detalle.join('\n   ')}`;
+      const oferta = v.prod.descuento ? ` (oferta −${v.prod.descuento}%)` : '';
+      return `• ${i.cantidad} × ${v.prod.nombre}${oferta} — ${formatoPrecio(v.precio * i.cantidad)}\n   ${v.detalle.join('\n   ')}`;
     }),
     '',
     `Subtotal: ${formatoPrecio(subtotal)}`,
@@ -860,7 +876,13 @@ function enviarPedido() {
 
 /* ===== Inicio ===== */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  const ok = await CATALOGO;
+  if (!ok) {
+    $('#catalogo').innerHTML = `<p class="catalogo-vacio">No pudimos cargar los productos. Probá recargar la página o <a data-wa="¡Hola Juli! Quiero hacer un pedido.">escribinos por WhatsApp</a>.</p>`;
+    activarLinksWhatsApp($('#catalogo'));
+    return;
+  }
   depurarCarrito();
   avisoQuitados = '';
   renderCatalogo();

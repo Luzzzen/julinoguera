@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Panel · Juli Noguera</title>
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin">
+
+  <!-- ===== Login ===== -->
+  <main id="vista-login" class="login" hidden>
+    <img src="img/logo.svg" alt="Juli Noguera" width="180" height="166">
+    <h1>Panel</h1>
+    <form id="form-login" class="login-form">
+      <label class="campo"><span>Mail</span><input name="email" type="email" autocomplete="username" required></label>
+      <label class="campo"><span>Contraseña</span><input name="clave" type="password" autocomplete="current-password" required></label>
+      <p id="login-error" class="aviso-error" role="alert" hidden></p>
+      <button class="boton" type="submit">Entrar</button>
+    </form>
+  </main>
+
+  <!-- ===== Panel ===== -->
+  <div id="vista-panel" hidden>
+    <header class="admin-cabecera">
+      <img src="img/logo-oscuro.svg" alt="" width="44" height="41">
+      <strong>Panel</strong>
+      <a href="tienda.html" target="_blank" rel="noopener" class="admin-link">Ver tienda ↗</a>
+      <button id="salir" type="button" class="enlace">Salir</button>
+    </header>
+
+    <nav class="admin-tabs" aria-label="Secciones del panel">
+      <button type="button" data-tab="productos">Productos</button>
+      <button type="button" data-tab="categorias">Categorías</button>
+      <button type="button" data-tab="adicionales">Adicionales</button>
+      <button type="button" data-tab="general">Envíos y horarios</button>
+      <button type="button" data-tab="personalizada">Personalizadas</button>
+    </nav>
+
+    <main id="admin-contenido" class="admin-contenido"></main>
+  </div>
+
+  <!-- ===== Editor de producto ===== -->
+  <dialog id="editor" class="admin-editor" aria-labelledby="editor-titulo"></dialog>
+
+  <!-- ===== Avisos ===== -->
+  <div id="aviso" class="admin-aviso" role="status" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

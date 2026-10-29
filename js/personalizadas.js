@@ -1,7 +1,9 @@
 /* ===== Referencia de precios ===== */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await CATALOGO;
   const P = PERSONALIZADA;
+  if (!P) return;
   const form = document.getElementById('form-referencia');
   const tamanos = document.getElementById('ref-tamanos');
   const bizcochuelos = document.getElementById('ref-bizcochuelos');
@@ -14,20 +16,20 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== Tira de fotos ===== */
   const tira = document.getElementById('tira-fotos');
   tira.hidden = !P.fotos.length;
-  tira.innerHTML = P.fotos.map((src, i) => `<img src="${src}" alt="Torta personalizada o mesa dulce ${i + 1}" loading="lazy">`).join('');
+  tira.innerHTML = P.fotos.map((src, i) => `<img src="${esc(src)}" alt="Torta personalizada o mesa dulce ${i + 1}" loading="lazy">`).join('');
 
   /* ===== Opciones ===== */
   tamanos.innerHTML = P.tamanos.map((t, i) => `<label class="opcion opcion-bloque">
       <input type="radio" name="tamano" value="${t.id}"${i === 0 ? ' checked' : ''}>
-      <span><strong>${t.nombre} · ${formatoPrecio(t.precio)}</strong><small>${t.detalle}</small></span>
+      <span><strong>${esc(t.nombre)} · ${formatoPrecio(t.precio)}</strong><small>${esc(t.detalle)}</small></span>
     </label>`).join('');
 
   bizcochuelos.innerHTML = P.bizcochuelos.map((b, i) => `<label class="opcion">
-      <input type="radio" name="bizcochuelo" value="${b.id}"${i === 0 ? ' checked' : ''}><span>${b.nombre}</span>
+      <input type="radio" name="bizcochuelo" value="${esc(b.id)}"${i === 0 ? ' checked' : ''}><span>${esc(b.nombre)}</span>
     </label>`).join('');
 
   rellenos.innerHTML = P.rellenos.map(r => `<label class="opcion">
-      <input type="checkbox" name="relleno" value="${r.id}"><span>${r.nombre}</span>
+      <input type="checkbox" name="relleno" value="${esc(r.id)}"><span>${esc(r.nombre)}</span>
     </label>`).join('');
 
   /* ===== Actualización ===== */

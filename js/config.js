@@ -1,26 +1,30 @@
-/* ===== Configuración general ===== */
+/* ===== Configuración =====
+   Los productos, precios, horarios y zonas se cargan desde Supabase (panel de admin).
+   Estos valores son solo el respaldo si la base no responde. */
 
 window.CONFIG = {
+  supabase: {
+    url: 'https://spfadwdiujizxizedxjw.supabase.co',
+    key: 'sb_publishable_0kKPAA7PBDkL45fwrDhNyA_zBFGcawE'   // clave pública, se puede compartir
+  },
+
   marca: 'Juli Noguera',
   whatsapp: '5491135106871',
   localidad: 'San Justo',
   direccionRetiro: 'San Justo · Venezuela y Carrasco',
 
-  /* ===== Fechas ===== */
-  anticipacionMinDias: 1,      // días mínimos desde hoy
-  horaCorte: 17,               // después de esta hora ya no se puede pedir para mañana
-  ventanaDias: 30,             // hasta cuántos días adelante se puede reservar
-  diasCerrados: [0],           // 0 = domingo
-  fechasBloqueadas: [],        // 'AAAA-MM-DD' (feriados, vacaciones)
+  anticipacionMinDias: 1,
+  horaCorte: 17,
+  ventanaDias: 30,
+  diasCerrados: [0],
+  fechasBloqueadas: [],
 
-  /* ===== Horarios (sábado aparte) ===== */
   horarios: {
     retiro: { semana: ['11 a 13 hs', '15 a 17 hs'], sabado: ['11 a 13 hs'] },
     envio:  { semana: ['Despacho 10 hs', 'Despacho 17 hs'], sabado: ['Despacho 10 hs'] }
   },
 
-  /* ===== Envíos ===== */
-  envioGratisDesde: 100000,    // envío sin cargo si los productos superan este monto
+  envioGratisDesde: 100000,
   zonasEnvio: [
     { id: 'z1', nombre: 'Zona 1', barrios: 'San Justo, Villa Luzuriaga', precio: 3000 },
     { id: 'z2', nombre: 'Zona 2', barrios: 'Ramos Mejía, Haedo',         precio: 4000 },

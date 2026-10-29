@@ -902,6 +902,26 @@ img { max-width: 100%; display: block; }
 .panel h3 { font-size: 1.35rem; }
 .tira-fotos[hidden] { display: none; }
 
+/* ===== Ofertas y disponibilidad ===== */
+
+.cinta-oferta {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  padding: .3em .8em;
+  border-radius: 999px;
+  background: var(--violeta-oscuro);
+  color: var(--blanco);
+  font-size: .8rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, .3);
+}
+.precio s { font-weight: 400; font-size: .85rem; color: var(--tinta-suave); margin-right: .15em; }
+.mini-oferta { font-size: .75rem; color: var(--violeta); font-weight: 700; }
+.tarjeta-off .galeria { filter: grayscale(.5); opacity: .75; }
+.catalogo-vacio { padding: 40px 0; text-align: center; color: var(--tinta-suave); }
+
 /* ===== Movimiento reducido ===== */
 
 @media (prefers-reduced-motion: reduce) {
