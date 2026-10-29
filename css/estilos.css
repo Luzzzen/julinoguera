@@ -81,8 +81,8 @@ img { max-width: 100%; display: block; }
 
 .boton-chico { padding: .5em 1.1em; font-size: .92rem; }
 
-.boton-wa { background: var(--wa); border-color: var(--wa); width: 100%; }
-.boton-wa:hover { background: #187d44; border-color: #187d44; }
+.boton-wa { width: 100%; }
+.boton-wa svg { width: 20px; height: 20px; flex: none; }
 
 .boton-grande {
   flex-direction: column;
@@ -667,14 +667,14 @@ img { max-width: 100%; display: block; }
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  background: var(--wa);
+  background: var(--violeta);
   color: var(--blanco);
   display: grid;
   place-items: center;
-  box-shadow: 0 8px 24px -6px rgba(31, 157, 85, .55);
+  box-shadow: 0 8px 24px -6px rgba(74, 60, 94, .55);
   transition: transform .15s;
 }
-.wa-flotante:hover { transform: scale(1.06); }
+.wa-flotante:hover { transform: scale(1.06); background: var(--violeta-oscuro); }
 .wa-flotante svg { width: 30px; height: 30px; }
 
 /* ===== Pie ===== */
@@ -800,11 +800,14 @@ img { max-width: 100%; display: block; }
   scroll-snap-type: x mandatory;
   margin: 0 calc(-1 * var(--gutter)) 24px;
   padding: 0 var(--gutter) 4px;
+  scroll-padding-inline: var(--gutter);
   scrollbar-width: none;
 }
 .tira-fotos::-webkit-scrollbar { display: none; }
 .tira-fotos > * {
-  flex: 0 0 min(42%, 180px);
+  flex: 0 0 auto;
+  width: min(62%, 240px);
+  min-width: 0;
   aspect-ratio: 4 / 5;
   border-radius: var(--radio-chico);
   object-fit: cover;
@@ -854,6 +857,50 @@ img { max-width: 100%; display: block; }
   .encabezado-nav a { padding: .4em .55em; font-size: .88rem; }
   .encabezado-logo img { width: 44px; }
 }
+
+/* ===== Tarjetas clickeables y cierre de categoría ===== */
+
+.tarjeta-clic { cursor: pointer; transition: transform .15s, box-shadow .15s; }
+.tarjeta-clic:hover { transform: translateY(-2px); box-shadow: 0 14px 34px -12px rgba(74, 60, 94, .35); }
+
+.tarjeta-cierre {
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 20px;
+  text-align: center;
+  text-decoration: none;
+  background: var(--lavanda-suave);
+  box-shadow: none;
+  border: 1.5px dashed var(--lavanda);
+}
+.tarjeta-cierre p { margin: 0; font-family: var(--serif); font-size: 1.25rem; color: var(--violeta-oscuro); }
+.tarjeta-cierre:hover .boton { background: var(--blanco); }
+
+/* ===== Eventos ===== */
+
+.accesos-eventos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+.accesos-eventos a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 14px;
+  border-radius: var(--radio-chico);
+  background: var(--violeta);
+  color: var(--blanco);
+  text-decoration: none;
+  box-shadow: var(--sombra);
+}
+.accesos-eventos a:last-child { background: var(--blanco); color: var(--violeta-oscuro); border: 2px solid var(--violeta); }
+.accesos-eventos strong { font-family: var(--serif); font-size: 1.1rem; line-height: 1.2; }
+.accesos-eventos span { font-size: .82rem; opacity: .85; }
+
+.seccion-evento { padding-top: 16px; margin-bottom: 12px; }
+.seccion-evento > h2 { margin-bottom: .3em; }
+.seccion-bajada { color: var(--tinta-suave); }
+.seccion-evento .condiciones { margin-top: 12px; }
+.panel h3 { font-size: 1.35rem; }
+.tira-fotos[hidden] { display: none; }
 
 /* ===== Movimiento reducido ===== */
 

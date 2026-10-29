@@ -54,8 +54,23 @@ function esHabil(d) {
     && !CONFIG.diasCerrados.includes(d.getDay())
     && !CONFIG.fechasBloqueadas.includes(isoDe(d));
 }
+/* Porciones: la entrega es el viernes de cada semana y se publican el miércoles.
+   Devuelve la próxima entrega posible y si ya se puede pedir. */
+function entregaSemanal(prod) {
+  const s = prod.entregaFija.semanal;
+  const ahora = new Date();
+  const fecha = hoy();
+  fecha.setDate(fecha.getDate() + (s.diaEntrega - fecha.getDay() + 7) % 7);
+  while (fecha < fechaMinima()) fecha.setDate(fecha.getDate() + 7);
+  const primera = deIso(s.primeraEntrega);
+  if (fecha < primera) fecha.setTime(primera.getTime());
+  const publicacion = new Date(fecha);
+  publicacion.setDate(publicacion.getDate() - (s.diaEntrega - s.diaPublicacion));
+  publicacion.setHours(s.horaPublicacion, 0, 0, 0);
+  return { fecha: isoDe(fecha), publicacion, disponible: ahora >= publicacion };
+}
 function entregaFijaDisponible(prod) {
-  return !prod.entregaFija || deIso(prod.entregaFija.fecha) >= fechaMinima();
+  return !prod.entregaFija || entregaSemanal(prod).disponible;
 }
 
 /* ===== Opciones y precios ===== */
@@ -140,15 +155,20 @@ function renderCatalogo() {
   contenedor.innerHTML = categorias.map(c => `
     <section class="categoria" id="cat-${c.id}" aria-labelledby="titulo-${c.id}">
       <h2 id="titulo-${c.id}">${c.nombre}</h2>
-      ${c.nota ? `<p class="categoria-nota">${c.nota} <a data-wa="¡Hola Juli! Necesito ayuda para saber cuántos bocaditos pedir.">Escribinos</a></p>` : ''}
+      ${c.nota ? `<p class="categoria-nota">${c.nota}</p>` : ''}
       <div class="grilla">
         ${PRODUCTOS.filter(p => p.categoria === c.id).map(tarjetaHTML).join('')}
+        ${c.cierre ? `<a class="tarjeta tarjeta-cierre" href="${c.cierre.href}">
+            <p>${c.cierre.texto}</p>
+            <span class="boton boton-secundario">${c.cierre.boton} →</span>
+          </a>` : ''}
       </div>
     </section>`).join('');
 
   activarGalerias(contenedor);
   activarLinksWhatsApp(contenedor);
-  $$('[data-producto]', contenedor).forEach(b => b.addEventListener('click', () => abrirConfigurador(b.dataset.producto)));
+  // Toda la tarjeta abre el producto (los puntos de la galería no, porque frenan el click)
+  $$('[data-abrir]', contenedor).forEach(t => t.addEventListener('click', () => abrirConfigurador(t.dataset.abrir)));
 
   const enlaces = $$('a', nav);
   const observador = new IntersectionObserver(entradas => {
@@ -162,15 +182,18 @@ function renderCatalogo() {
 
 function tarjetaHTML(prod) {
   const desde = tieneVariosPrecios(prod) ? 'desde ' : '';
-  const disponible = entregaFijaDisponible(prod);
-  const etiqueta = prod.entregaFija
-    ? `<span class="etiqueta">${disponible ? 'Entrega: ' + textoFecha(prod.entregaFija.fecha) : 'Próxima fecha a confirmar'}</span>`
+  const semana = prod.entregaFija ? entregaSemanal(prod) : null;
+  const disponible = !semana || semana.disponible;
+  const etiqueta = semana
+    ? `<span class="etiqueta">${disponible
+        ? 'Entrega: ' + textoFecha(semana.fecha)
+        : 'Se publican el ' + textoFecha(isoDe(semana.publicacion)).toLowerCase()}</span>`
     : '';
   const boton = disponible
     ? `<button class="boton boton-chico" type="button" data-producto="${prod.id}">Elegir</button>`
-    : `<button class="boton boton-chico" type="button" disabled>Sin fecha</button>`;
+    : `<button class="boton boton-chico" type="button" disabled>Próximamente</button>`;
   return `
-    <article class="tarjeta">
+    <article class="tarjeta${disponible ? ' tarjeta-clic' : ''}"${disponible ? ` data-abrir="${prod.id}"` : ''}>
       ${galeriaHTML(prod)}
       <div class="tarjeta-cuerpo">
         ${etiqueta}
@@ -223,7 +246,15 @@ function abrirConfigurador(id) {
 
   const form = $('form', dialogo);
   form.addEventListener('submit', e => { if (!e.submitter || e.submitter.value !== 'cerrar') e.preventDefault(); });
-  form.addEventListener('change', actualizarConfigurador);
+  form.addEventListener('change', e => {
+    // Adicionales del mismo grupo (las velas): se puede marcar uno solo
+    const t = e.target;
+    const grupo = t.name === 'adic' && t.checked && ADICIONALES[t.value].grupo;
+    if (grupo) $$('input[name="adic"]', form).forEach(i => {
+      if (i !== t && ADICIONALES[i.value].grupo === grupo) i.checked = false;
+    });
+    actualizarConfigurador();
+  });
   form.addEventListener('input', actualizarConfigurador);
   $$('[data-cant]', form).forEach(b => b.addEventListener('click', () => {
     const inp = form.cantidad;
@@ -245,11 +276,12 @@ function abrirConfigurador(id) {
 function fechaFijaHTML(prod) {
   if (!prod.entregaFija) return '';
   const f = prod.entregaFija;
+  const fecha = entregaSemanal(prod).fecha;
   return `<fieldset class="grupo" data-opcion="__fecha">
       <legend>Fecha de entrega</legend>
       <div class="opciones">
         <label class="opcion">
-          <input type="radio" name="__fecha" value="${f.fecha}"><span>${textoFecha(f.fecha)}</span>
+          <input type="radio" name="__fecha" value="${fecha}"><span>${textoFecha(fecha)}</span>
         </label>
       </div>
       <p class="grupo-nota">Retiro de ${f.retiro.join(' / ')} · envío ${f.envio.join(' / ').toLowerCase()}</p>
@@ -424,7 +456,7 @@ function itemVigente(item) {
       if (op.tipo === 'cantidades') return v && Object.keys(v).every(id => buscarValor(op, id));
       return v && buscarValor(op, v);
     }) && item.adic.every(id => ADICIONALES[id] && (prod.adicionales || []).includes(id))
-      && !faltantes(prod, item.sel, prod.entregaFija ? prod.entregaFija.fecha : null).length;
+      && !faltantes(prod, item.sel, prod.entregaFija ? entregaSemanal(prod).fecha : null).length;
     if (!ok) return null;
   } catch { return null; }
   return {
@@ -501,7 +533,9 @@ function mostrarToast(texto) {
 // Si hay un producto con fecha fija (porciones), todo el pedido va ese día.
 function entregaFijaDelPedido() {
   const item = carrito.find(i => buscarProducto(i.id).entregaFija);
-  return item ? buscarProducto(item.id).entregaFija : null;
+  if (!item) return null;
+  const prod = buscarProducto(item.id);
+  return { ...prod.entregaFija, fecha: entregaSemanal(prod).fecha };
 }
 
 function franjasPara(modalidad, iso, fija) {
@@ -637,7 +671,7 @@ function renderCarrito() {
 
       <label class="campo">
         <span>Comentarios <small>opcional</small></span>
-        <textarea name="notas" rows="2" placeholder="Ej.: dedicatoria en la tarjeta, timbre, etc.">${escaparAtributo(guardado.notas)}</textarea>
+        <textarea name="notas" rows="2">${escaparAtributo(guardado.notas)}</textarea>
       </label>
     </form>`;
   avisoQuitados = '';
@@ -722,6 +756,7 @@ function actualizarEntrega(franjaPrevia) {
   const fija = entregaFijaDelPedido();
   $('#bloque-envio').hidden = !envio;
   $('#etiqueta-tercero').textContent = envio ? 'Nombre de quien recibe' : 'Nombre de quien retira';
+  form.notas.placeholder = envio ? 'Ej.: dto, timbre, etc.' : '';
 
   const franjas = franjasPara(modalidad, form.fecha.value, fija);
   const contenedor = $('#franjas');

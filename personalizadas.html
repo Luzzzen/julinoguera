@@ -27,53 +27,70 @@
 
     <!-- ===== Intro ===== -->
     <section class="bloque-intro">
-      <h1>Tortas personalizadas</h1>
-      <p>Tortas de buttercream con diseños a elección. Precios de referencia para decoraciones básicas; el presupuesto final lo charlamos por WhatsApp según tu idea.</p>
+      <h1>Eventos</h1>
+      <p>Tortas personalizadas y mesas dulces para tus festejos. Contanos tu idea y armamos un presupuesto a tu medida.</p>
     </section>
 
-    <!-- ===== Condiciones ===== -->
-    <ul class="condiciones">
-      <li><strong data-sena></strong><span>de seña para confirmar</span></li>
-      <li><strong data-anticipacion></strong><span>de anticipación</span></li>
-      <li><strong>Buttercream</strong><span>decoraciones a elección</span></li>
-    </ul>
+    <!-- ===== Accesos a cada sección ===== -->
+    <nav class="accesos-eventos" aria-label="Secciones de eventos">
+      <a href="#personalizadas">
+        <strong>Tortas personalizadas</strong>
+        <span>Buttercream con diseño a elección</span>
+      </a>
+      <a href="#mesas-dulces">
+        <strong>Mesas dulces</strong>
+        <span>Todo para tu festejo</span>
+      </a>
+    </nav>
 
-    <!-- ===== Fotos de referencia ===== -->
-    <div id="tira-fotos" class="tira-fotos" aria-label="Ejemplos de tortas personalizadas"></div>
+    <!-- ===== Galería ===== -->
+    <div id="tira-fotos" class="tira-fotos" aria-label="Tortas personalizadas y mesas dulces"></div>
 
-    <!-- ===== Referencia de precios ===== -->
-    <section class="panel" aria-labelledby="titulo-ref">
-      <h2 id="titulo-ref">Precio de referencia</h2>
-      <form id="form-referencia">
-        <fieldset class="grupo">
-          <legend>Tamaño</legend>
-          <div class="opciones opciones-columna" id="ref-tamanos"></div>
-        </fieldset>
-        <fieldset class="grupo">
-          <legend>Bizcochuelo</legend>
-          <div class="opciones" id="ref-bizcochuelos"></div>
-        </fieldset>
-        <fieldset class="grupo">
-          <legend>Rellenos <span class="grupo-ayuda" id="ref-ayuda"></span></legend>
-          <div class="opciones" id="ref-rellenos"></div>
-        </fieldset>
-      </form>
+    <!-- ===== Tortas personalizadas ===== -->
+    <section id="personalizadas" class="seccion-evento" aria-labelledby="titulo-pers">
+      <h2 id="titulo-pers">Tortas personalizadas</h2>
+      <p class="seccion-bajada">Tortas de buttercream con diseños a elección. Precios de referencia para decoraciones básicas; el presupuesto final lo charlamos por WhatsApp según tu idea.</p>
 
-      <dl class="totales">
-        <div class="total"><dt>Desde</dt><dd id="ref-precio"></dd></div>
-        <div><dt>Seña (<span data-sena></span>)</dt><dd id="ref-sena"></dd></div>
-        <div><dt>Peso aproximado</dt><dd id="ref-peso"></dd></div>
-      </dl>
-      <p class="nota" id="ref-nota"></p>
-      <a id="ref-wa" class="boton boton-wa" href="#" target="_blank" rel="noopener">Pedir presupuesto final por WhatsApp</a>
+      <ul class="condiciones">
+        <li><strong data-sena></strong><span>de seña para confirmar</span></li>
+        <li><strong data-anticipacion></strong><span>de anticipación</span></li>
+        <li><strong>Buttercream</strong><span>decoraciones a elección</span></li>
+      </ul>
+
+      <div class="panel">
+        <h3>Precio de referencia</h3>
+        <form id="form-referencia">
+          <fieldset class="grupo">
+            <legend>Tamaño</legend>
+            <div class="opciones opciones-columna" id="ref-tamanos"></div>
+          </fieldset>
+          <fieldset class="grupo">
+            <legend>Bizcochuelo</legend>
+            <div class="opciones" id="ref-bizcochuelos"></div>
+          </fieldset>
+          <fieldset class="grupo">
+            <legend>Rellenos <span class="grupo-ayuda" id="ref-ayuda"></span></legend>
+            <div class="opciones" id="ref-rellenos"></div>
+          </fieldset>
+        </form>
+
+        <dl class="totales">
+          <div class="total"><dt>Desde</dt><dd id="ref-precio"></dd></div>
+          <div><dt>Seña (<span data-sena></span>)</dt><dd id="ref-sena"></dd></div>
+        </dl>
+        <p class="nota" id="ref-nota"></p>
+        <a id="ref-wa" class="boton boton-wa" href="#" target="_blank" rel="noopener">Pedir presupuesto final por WhatsApp</a>
+      </div>
     </section>
 
     <!-- ===== Mesas dulces ===== -->
-    <section class="panel panel-acento" aria-labelledby="titulo-mesas">
+    <section id="mesas-dulces" class="seccion-evento" aria-labelledby="titulo-mesas">
       <h2 id="titulo-mesas">Mesas dulces y eventos</h2>
-      <p>¿Tenés un festejo y querés que nos encarguemos de tu mesa dulce? Contanos el motivo, la fecha y el lugar, y charlamos un presupuesto a tu medida.</p>
-      <a class="boton boton-wa" data-wa="¡Hola Juli! Quiero consultar por una mesa dulce.&#10;Motivo: &#10;Fecha: &#10;Lugar: ">Consultar por WhatsApp</a>
-      <p class="nota nota-abajo"><a href="preguntas.html#mesa-dulce">¿Cómo calcular mi mesa dulce?</a></p>
+      <div class="panel panel-acento">
+        <p>¿Tenés un festejo y querés que nos encarguemos de tu mesa dulce? Contanos el motivo, la fecha y el lugar, y charlamos un presupuesto a tu medida.</p>
+        <a class="boton boton-wa" data-wa="¡Hola Juli! Quiero consultar por una mesa dulce.&#10;Motivo: &#10;Fecha: &#10;Lugar: ">Consultar por WhatsApp</a>
+        <p class="nota nota-abajo"><a href="preguntas.html#mesa-dulce">¿Cómo calcular mi mesa dulce?</a></p>
+      </div>
     </section>
 
     <ul class="chips-info chips-centro">

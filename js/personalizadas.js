@@ -13,15 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ===== Tira de fotos ===== */
   const tira = document.getElementById('tira-fotos');
-  const fotos = P.fotos.length ? P.fotos : [null, null, null, null];
-  tira.innerHTML = fotos.map((src, i) => src
-    ? `<img src="${src}" alt="Torta personalizada ${i + 1}" loading="lazy">`
-    : `<div class="foto-vacia"><span>Foto próximamente</span></div>`).join('');
+  tira.hidden = !P.fotos.length;
+  tira.innerHTML = P.fotos.map((src, i) => `<img src="${src}" alt="Torta personalizada o mesa dulce ${i + 1}" loading="lazy">`).join('');
 
   /* ===== Opciones ===== */
   tamanos.innerHTML = P.tamanos.map((t, i) => `<label class="opcion opcion-bloque">
       <input type="radio" name="tamano" value="${t.id}"${i === 0 ? ' checked' : ''}>
-      <span><strong>${t.nombre} · ${formatoPrecio(t.precio)}</strong><small>${t.detalle} · ${t.elegir} rellenos</small></span>
+      <span><strong>${t.nombre} · ${formatoPrecio(t.precio)}</strong><small>${t.detalle}</small></span>
     </label>`).join('');
 
   bizcochuelos.innerHTML = P.bizcochuelos.map((b, i) => `<label class="opcion">
@@ -37,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function actualizar() {
     const tamano = P.tamanos.find(t => t.id === form.tamano.value);
     const bizcochuelo = P.bizcochuelos.find(b => b.id === form.bizcochuelo.value);
-    const n = tamano.elegir;
+    const n = P.rellenosMax;
     const marcados = [...rellenos.querySelectorAll('input:checked')];
     marcados.slice(n).forEach(i => i.checked = false);
     const total = Math.min(marcados.length, n);
@@ -46,7 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('ref-precio').textContent = formatoPrecio(tamano.precio);
     document.getElementById('ref-sena').textContent = formatoPrecio(Math.round(tamano.precio * P.sena / 100));
-    document.getElementById('ref-peso').textContent = tamano.peso;
 
     const elegidos = [...rellenos.querySelectorAll('input:checked')]
       .map(i => P.rellenos.find(r => r.id === i.value).nombre);
