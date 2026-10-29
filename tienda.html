@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tienda · Juli Noguera</title>
-  <meta name="description" content="Tortas, desayunos, mini postres, tartas, budines, alfajores y masitas. Pedidos con 24 hs de anticipación, retiro o envío.">
+  <meta name="description" content="Tortas, mini postres, mini tartas, alfajorcitos y porciones. Pedidos con 24 hs de anticipación, retiro en San Justo o envío por zonas.">
   <link rel="icon" href="img/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,8 @@
     <a href="index.html" class="encabezado-logo"><img src="img/logo-oscuro.svg" alt="Juli Noguera" width="60" height="56"></a>
     <nav class="encabezado-nav" aria-label="Principal">
       <a href="tienda.html" aria-current="page">Tienda</a>
-      <a href="personalizadas.html">Personalizadas</a>
+      <a href="personalizadas.html">Eventos</a>
+      <a href="preguntas.html">Preguntas</a>
     </nav>
     <button id="btn-carrito" class="btn-carrito" type="button">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 8h14l-1.2 11.1a2 2 0 0 1-2 1.9H8.2a2 2 0 0 1-2-1.9L5 8Zm4 0V6.5a3 3 0 0 1 6 0V8"/></svg>
@@ -29,7 +30,13 @@
   <!-- ===== Intro y categorías ===== -->
   <div class="tienda-intro">
     <h1>Tienda</h1>
-    <p>Todo se prepara con <strong>24 hs de anticipación</strong>. Armá tu pedido, elegí fecha y si lo retirás o te lo enviamos, y lo confirmamos por WhatsApp.</p>
+    <p>Preparamos cada pedido especialmente para vos. Elegí por acá tus favoritos, seleccioná fecha y opciones de entrega y el pedido se enviará automáticamente a nuestro WhatsApp.</p>
+    <ul class="chips-info">
+      <li>24 hs de anticipación</li>
+      <li>Retiro en San Justo</li>
+      <li>Envíos por zonas aledañas</li>
+      <li>Envío sin cargo superando <span data-envio-gratis></span></li>
+    </ul>
   </div>
 
   <nav id="categorias" class="categorias" aria-label="Categorías"></nav>
@@ -39,12 +46,13 @@
 
   <aside class="aviso-personalizadas">
     <p>¿Buscás una torta personalizada o una mesa dulce para un evento?</p>
-    <a class="boton boton-secundario" href="personalizadas.html">Ver personalizadas</a>
+    <a class="boton boton-secundario" href="personalizadas.html">Ver eventos</a>
   </aside>
 
   <!-- ===== Pie ===== -->
   <footer class="pie">
-    <p>Retiro en <span data-direccion></span> · © <span id="anio"></span> Juli Noguera</p>
+    <p>Retiro en <span data-direccion></span> · Envíos por zonas aledañas</p>
+    <p><a href="preguntas.html">Preguntas frecuentes</a> · © <span id="anio"></span> Juli Noguera</p>
   </footer>
 
   <!-- ===== Configurador de producto ===== -->
@@ -64,9 +72,9 @@
           <div id="fila-envio" hidden><dt>Envío</dt><dd id="costo-envio"></dd></div>
           <div class="total"><dt>Total</dt><dd id="total"></dd></div>
         </dl>
+        <p id="pista-envio" class="pista-envio" hidden></p>
         <p id="aviso-pedido" class="aviso-error" role="alert" hidden></p>
         <button id="enviar-pedido" type="button" class="boton boton-wa">Enviar pedido por WhatsApp</button>
-        <button id="vaciar" type="button" class="enlace">Vaciar pedido</button>
       </div>
     </div>
   </dialog>

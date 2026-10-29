@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preguntas frecuentes · Juli Noguera</title>
+  <meta name="description" content="Cómo pedir, retiros en San Justo, envíos por zona, tortas personalizadas y cómo calcular tu mesa dulce.">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <!-- ===== Encabezado ===== -->
+  <header class="encabezado">
+    <a href="index.html" class="encabezado-logo"><img src="img/logo-oscuro.svg" alt="Juli Noguera" width="60" height="56"></a>
+    <nav class="encabezado-nav" aria-label="Principal">
+      <a href="tienda.html">Tienda</a>
+      <a href="personalizadas.html">Eventos</a>
+      <a href="preguntas.html" aria-current="page">Preguntas</a>
+    </nav>
+  </header>
+
+  <main class="contenido">
+    <h1>Preguntas frecuentes</h1>
+
+    <div class="faq">
+      <details open>
+        <summary>¿Cómo hago mi pedido por la tienda?</summary>
+        <p>Sumá al carrito los productos que necesites, seguí los pasos y el pedido se enviará automáticamente a nuestro WhatsApp.</p>
+        <p>Ahí te enviamos los datos para abonar por transferencia y te confirmamos el pedido.</p>
+      </details>
+
+      <details>
+        <summary>¿Cuándo va a estar listo mi pedido?</summary>
+        <p>Seleccioná el día y horario de entrega en la tienda: puede ser dentro de 24 hs o podés reservar tu fecha (hasta un mes).</p>
+      </details>
+
+      <details>
+        <summary>¿Cómo hago un pedido personalizado?</summary>
+        <p>Mirá nuestra sección de <a href="personalizadas.html">tortas personalizadas</a> y comunicate con nosotros. Para esta opción se pide una seña del 50% por transferencia y una anticipación mínima de 72 hs. Lo restante lo abonás al recibir tu pedido.</p>
+      </details>
+
+      <details>
+        <summary>¿Dónde lo retiro?</summary>
+        <p>Podés retirar por nuestro taller en San Justo (Venezuela y Carrasco). Estamos de lunes a viernes de 11 a 13 hs y de 15 a 17 hs, y los sábados de 11 a 13 hs.</p>
+      </details>
+
+      <details>
+        <summary>¿Hacen envíos?</summary>
+        <p>¡Sí! Hacemos envíos por nuestra cuenta a zonas aledañas. En la tienda podés seleccionar tu zona para ver el precio (rondan <span data-rango-envio></span>).</p>
+        <p>Despachamos de lunes a viernes a las 10 y a las 17 hs, y los sábados a las 10 hs. El horario de despacho es la hora en la que arrancamos el recorrido. Te vamos a avisar por WhatsApp cuando estemos en camino a tu dirección.</p>
+        <p>Si tu zona no está dentro del alcance de nuestros envíos o tenés algún problema con el horario, <a data-wa="¡Hola Juli! Quiero coordinar un envío.">comunicate con nosotros</a> para coordinar tu envío mediante aplicaciones (Rappi o Uber).</p>
+      </details>
+
+      <details id="mesa-dulce">
+        <summary>¿Cómo calcular mi mesa dulce?</summary>
+        <p>El cálculo estándar son 3 porciones o bocados por persona (por ejemplo: una porción de torta + 1 mini postre + 1 alfajorcito).</p>
+        <p>Para niños pequeños recomendamos considerar media porción de torta y dos unidades de nuestra caja de bocaditos (alfajorcitos, trufas, brownie).</p>
+        <p>Si necesitás una mesa dulce para un festejo grande, <a data-wa="¡Hola Juli! Necesito ayuda para calcular mi mesa dulce.&#10;Cantidad de personas: &#10;Tipo de evento: ">consultanos</a> y te asesoramos con un presupuesto a medida.</p>
+      </details>
+
+      <details>
+        <summary>¿Cómo calcular el rendimiento de mi torta?</summary>
+        <p>Nuestras tortas están calculadas en porciones de tamaño estándar. Si va a ser la torta o el postre principal, podés contemplar una porción entera por persona adulta y media porción por niño. Para eventos grandes, con mucha comida y mesa dulce completa, considerá media porción por persona.</p>
+        <p>En pedidos grandes de tortas o mesas dulces (compras superiores a <span data-envio-gratis></span>) te lo enviamos sin cargo y coordinamos con vos el horario.</p>
+      </details>
+    </div>
+
+    <p class="volver"><a href="tienda.html">Ir a la tienda →</a></p>
+  </main>
+
+  <!-- ===== Pie ===== -->
+  <footer class="pie">
+    <p>Retiro en <span data-direccion></span> · Envíos por zonas aledañas</p>
+    <p>© <span id="anio"></span> Juli Noguera</p>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/comun.js"></script>
+</body>
+</html>

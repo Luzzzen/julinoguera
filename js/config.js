@@ -3,22 +3,27 @@
 window.CONFIG = {
   marca: 'Juli Noguera',
   whatsapp: '5491135106871',
-  direccionRetiro: 'Carrasco 2175',
+  localidad: 'San Justo',
+  direccionRetiro: 'San Justo · Venezuela y Carrasco',
 
   /* ===== Fechas ===== */
-  anticipacionMinDias: 1,
-  ventanaDias: 30,
-  diasCerrados: [],
-  fechasBloqueadas: [],
+  anticipacionMinDias: 1,      // días mínimos desde hoy
+  horaCorte: 17,               // después de esta hora ya no se puede pedir para mañana
+  ventanaDias: 30,             // hasta cuántos días adelante se puede reservar
+  diasCerrados: [0],           // 0 = domingo
+  fechasBloqueadas: [],        // 'AAAA-MM-DD' (feriados, vacaciones)
 
-  /* ===== Horarios ===== */
-  franjasRetiro: ['10 a 13 hs', '15 a 18 hs'],
-  franjasEnvio: ['Despacho 10 hs', 'Despacho 17 hs'],
+  /* ===== Horarios (sábado aparte) ===== */
+  horarios: {
+    retiro: { semana: ['11 a 13 hs', '15 a 17 hs'], sabado: ['11 a 13 hs'] },
+    envio:  { semana: ['Despacho 10 hs', 'Despacho 17 hs'], sabado: ['Despacho 10 hs'] }
+  },
 
-  /* ===== Zonas de envío ===== */
+  /* ===== Envíos ===== */
+  envioGratisDesde: 100000,    // envío sin cargo si los productos superan este monto
   zonasEnvio: [
-    { id: 'z1', nombre: 'Zona 1 · hasta 3 km', precio: 2500 },
-    { id: 'z2', nombre: 'Zona 2 · de 3 a 6 km', precio: 4000 },
-    { id: 'z3', nombre: 'Zona 3 · de 6 a 10 km', precio: 6000 }
+    { id: 'z1', nombre: 'Zona 1', barrios: 'San Justo, Villa Luzuriaga', precio: 3000 },
+    { id: 'z2', nombre: 'Zona 2', barrios: 'Ramos Mejía, Haedo',         precio: 4000 },
+    { id: 'z3', nombre: 'Zona 3', barrios: 'Morón, Ciudadela',           precio: 5500 }
   ]
 };
