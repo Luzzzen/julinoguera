@@ -1,0 +1,29 @@
+# Evita que Supabase (plan gratis) pause el proyecto por inactividad.
+# Cada 3 días hace una consulta chiquita a la base. No toca nada.
+# Para usarlo en otro proyecto, cambiá SUPABASE_URL, SUPABASE_KEY y TABLA.
+
+name: Mantener Supabase activo
+
+on:
+  schedule:
+    - cron: '17 12 */3 * *'   # cada 3 días, 9:17 de Argentina
+  workflow_dispatch:           # botón para correrlo a mano desde la pestaña Actions
+
+env:
+  SUPABASE_URL: https://spfadwdiujizxizedxjw.supabase.co
+  SUPABASE_KEY: sb_publishable_0kKPAA7PBDkL45fwrDhNyA_zBFGcawE   # clave pública
+  TABLA: productos
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consultar la base
+        run: |
+          codigo=$(curl -s -o respuesta.txt -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/$TABLA?select=id&limit=1" \
+            -H "apikey: $SUPABASE_KEY")
+          echo "Respuesta: $codigo"
+          cat respuesta.txt
+          # Si falla, el workflow queda en rojo y GitHub te manda un mail
+          test "$codigo" = "200"
