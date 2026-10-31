@@ -284,13 +284,13 @@ input.mini { width: 70px; padding: .4em .6em; border: 1.5px solid var(--borde); 
   justify-content: space-between;
   gap: 12px;
   padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom));
-  background: var(--violeta-oscuro);
-  color: var(--blanco);
-  transform: translateY(110%);
-  transition: transform .2s;
+  transition: background .2s;
+  background: var(--blanco);
+  color: var(--tinta-suave);
+  border-top: 1px solid var(--borde);
 }
-.barra-guardar.activa { transform: none; }
-.barra-guardar .boton { background: var(--blanco); color: var(--violeta-oscuro); border-color: var(--blanco); }
+.barra-guardar.activa { background: var(--violeta-oscuro); color: var(--blanco); border-top-color: var(--violeta-oscuro); }
+.barra-guardar.activa .boton { background: var(--blanco); color: var(--violeta-oscuro); border-color: var(--blanco); }
 
 /* Avisos */
 .admin-aviso {
@@ -333,3 +333,6 @@ input.mini { width: 70px; padding: .4em .6em; border: 1.5px solid var(--borde); 
 .input-codigo { text-transform: uppercase; font-weight: 700; letter-spacing: .03em; }
 .campo select { width: 100%; padding: .75em .9em; border: 1.5px solid var(--borde); border-radius: var(--radio-chico); background: var(--blanco); font: 400 1rem var(--sans); }
 .fila-acciones .insignia { align-self: center; margin-right: 4px; }
+
+.tarjeta-guardar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; }
+.tarjeta-guardar .ayuda { margin: 0; }

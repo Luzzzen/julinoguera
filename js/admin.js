@@ -66,7 +66,11 @@ async function guardar(promesa, textoOk = 'Guardado') {
 function marcarSucio(v = true) {
   estado.sucio = v;
   const barra = $('#barra-guardar');
-  if (barra) barra.classList.toggle('activa', v);
+  if (!barra) return;
+  barra.classList.toggle('activa', v);
+  $('span', barra).textContent = v ? 'Tenés cambios sin guardar' : 'Sin cambios pendientes';
+  const b = $('button', barra);
+  if (b.textContent !== 'Guardando…') b.disabled = !v;
 }
 window.addEventListener('beforeunload', e => { if (estado.sucio) { e.preventDefault(); e.returnValue = ''; } });
 
@@ -309,7 +313,7 @@ function renderTab() {
 
 // Barra fija de "Guardar cambios" para las pestañas de edición en bloque
 function barraGuardar(alGuardar) {
-  return { html: `<div id="barra-guardar" class="barra-guardar"><span>Tenés cambios sin guardar</span><button type="button" class="boton">Guardar cambios</button></div>`,
+  return { html: `<div id="barra-guardar" class="barra-guardar"><span>Sin cambios pendientes</span><button type="button" class="boton" disabled>Guardar cambios</button></div>`,
     activar(cont) {
       $('#barra-guardar button', cont).addEventListener('click', async e => {
         const b = e.currentTarget;
@@ -881,26 +885,52 @@ async function tabCodigos(cont) {
   const { data, error } = await sb.from('codigos').select('*').order('creado');
   if (error) { cont.innerHTML = `<p class="aviso-error">${esc(mensajeError(error))}</p>`; return; }
   const originales = data.map(c => c.codigo);
-  const filas = copia(data);
+  const filas = copia(data).map(c => ({ ...c, _original: c.codigo }));
+
+  function validarCodigo(c) {
+    c.codigo = String(c.codigo || '').trim().toUpperCase().replace(/\s+/g, '');
+    if (!c.codigo) return 'Escribí el código (ej.: LANZAMIENTO).';
+    if (!(c.valor > 0)) return `Al código ${c.codigo} le falta el ${c.tipo === 'monto' ? 'monto' : 'porcentaje'}.`;
+    if (c.tipo === 'porcentaje' && c.valor > 100) return `El ${c.codigo} no puede ser más de 100%.`;
+    if (filas.filter(x => x.codigo === c.codigo).length > 1) return `Ya hay otro código ${c.codigo}.`;
+    return null;
+  }
+  const filaDB = c => ({ codigo: c.codigo, tipo: c.tipo, valor: c.valor, activo: c.activo !== false, vence: c.vence || null, minimo: c.minimo || null });
+
+  // Guarda un solo código (el botón de cada tarjeta)
+  async function guardarUno(i, boton) {
+    const c = filas[i];
+    const problema = validarCodigo(c);
+    if (problema) { aviso(problema, 'error'); return; }
+    boton.disabled = true; boton.textContent = 'Guardando…';
+    if (c._original && c._original !== c.codigo) {
+      const { error } = await sb.from('codigos').delete().eq('codigo', c._original);
+      if (error) { aviso(mensajeError(error), 'error'); boton.disabled = false; boton.textContent = 'Guardar código'; return; }
+    }
+    const ok = await guardar(sb.from('codigos').upsert(filaDB(c)), `Código ${c.codigo} guardado`);
+    boton.disabled = false; boton.textContent = 'Guardar código';
+    if (ok) {
+      c._original = c.codigo;
+      if (!originales.includes(c.codigo)) originales.push(c.codigo);
+      c._guardado = true;
+      marcarSucio(filas.some(x => !x._guardado));
+      render();
+    }
+  }
+  filas.forEach(c => c._guardado = true);
   const barra = barraGuardar(async () => {
     for (const c of filas) {
-      c.codigo = String(c.codigo || '').trim().toUpperCase().replace(/\s+/g, '');
-      if (!c.codigo) { aviso('Hay un código sin nombre.', 'error'); return false; }
-      if (!(c.valor > 0)) { aviso(`Al código ${c.codigo} le falta el valor.`, 'error'); return false; }
-      if (c.tipo === 'porcentaje' && c.valor > 100) { aviso(`El ${c.codigo} no puede ser más de 100%.`, 'error'); return false; }
+      const problema = validarCodigo(c);
+      if (problema) { aviso(problema, 'error'); return false; }
     }
     const nombres = filas.map(c => c.codigo);
-    if (new Set(nombres).size !== nombres.length) { aviso('Hay dos códigos con el mismo nombre.', 'error'); return false; }
     const borrar = originales.filter(c => !nombres.includes(c));
     if (borrar.length) {
       const { error } = await sb.from('codigos').delete().in('codigo', borrar);
       if (error) { aviso(mensajeError(error), 'error'); return false; }
     }
     if (!filas.length) { aviso('Códigos guardados'); return true; }
-    return guardar(sb.from('codigos').upsert(filas.map(c => ({
-      codigo: c.codigo, tipo: c.tipo, valor: c.valor, activo: c.activo !== false,
-      vence: c.vence || null, minimo: c.minimo || null
-    }))), 'Códigos guardados');
+    return guardar(sb.from('codigos').upsert(filas.map(filaDB)), 'Códigos guardados');
   });
 
   function estadoDe(c) {
@@ -933,6 +963,10 @@ async function tabCodigos(cont) {
               <label class="campo"><span>Vence <small>opcional</small></span><input type="datetime-local" data-k="vence" data-i="${i}" value="${aLocal(c.vence)}"></label>
               <label class="campo"><span>Compra mínima <small>opcional</small></span><input type="number" min="1" inputmode="numeric" data-k="minimo" data-i="${i}" value="${c.minimo ?? ''}" placeholder="Sin mínimo"></label>
             </div>
+            <div class="tarjeta-guardar">
+              <span class="ayuda">${c._guardado ? '✓ Guardado' : 'Sin guardar'}</span>
+              <button type="button" class="boton boton-chico" data-guardar="${i}"${c._guardado ? ' disabled' : ''}>Guardar código</button>
+            </div>
           </div>`).join('') || '<p class="ayuda">Todavía no hay códigos.</p>'}
       </div>
       <button type="button" class="boton boton-secundario" id="nuevo-codigo">+ Nuevo código</button>
@@ -942,6 +976,10 @@ async function tabCodigos(cont) {
     marcarSucio(estado.sucio);
     $$('[data-k]', cont).forEach(el => el.addEventListener(el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input', () => {
       const c = filas[el.dataset.i], k = el.dataset.k;
+      c._guardado = false;
+      const tarjeta = el.closest('.tarjeta-edit');
+      $('[data-guardar]', tarjeta).disabled = false;
+      $('.tarjeta-guardar .ayuda', tarjeta).textContent = 'Sin guardar';
       if (k === 'activo') c.activo = el.checked;
       else if (k === 'valor' || k === 'minimo') c[k] = numero(el.value);
       else if (k === 'vence') c.vence = deLocal(el.value);
@@ -950,13 +988,20 @@ async function tabCodigos(cont) {
       marcarSucio();
       if (k === 'tipo' || k === 'activo' || k === 'vence') render();
     }));
-    $$('[data-borrar]', cont).forEach(b => b.addEventListener('click', () => {
-      const c = filas[b.dataset.borrar];
+    $$('[data-borrar]', cont).forEach(b => b.addEventListener('click', async () => {
+      const i = Number(b.dataset.borrar), c = filas[i];
       if (!confirm(`¿Eliminar el código ${c.codigo || ''}?`)) return;
-      filas.splice(b.dataset.borrar, 1); marcarSucio(); render();
+      if (c._original) {
+        const ok = await guardar(sb.from('codigos').delete().eq('codigo', c._original), `Código ${c._original} eliminado`);
+        if (!ok) return;
+        originales.splice(originales.indexOf(c._original), 1);
+      }
+      filas.splice(i, 1);
+      marcarSucio(filas.some(x => !x._guardado)); render();
     }));
+    $$('[data-guardar]', cont).forEach(b => b.addEventListener('click', () => guardarUno(Number(b.dataset.guardar), b)));
     $('#nuevo-codigo', cont).addEventListener('click', () => {
-      filas.push({ codigo: '', tipo: 'porcentaje', valor: null, activo: true, vence: null, minimo: null });
+      filas.push({ codigo: '', tipo: 'porcentaje', valor: null, activo: true, vence: null, minimo: null, _guardado: false });
       marcarSucio(); render();
       const cods = $$('[data-k="codigo"]', cont); cods[cods.length - 1].focus();
     });
