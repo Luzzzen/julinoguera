@@ -954,6 +954,34 @@ img { max-width: 100%; display: block; }
 .pie-redes { margin-bottom: 6px !important; }
 .aviso-dia { color: var(--error); font-weight: 500; }
 
+/* ===== Código de descuento ===== */
+
+.bloque-codigo { padding: 4px 0 8px; border-bottom: 1px solid var(--borde); margin-bottom: 4px; }
+.bloque-codigo .campo { margin-bottom: 6px; }
+.fila-codigo { display: flex; gap: 8px; }
+.fila-codigo input {
+  flex: 1;
+  min-width: 0;
+  padding: .6em .9em;
+  border: 1.5px solid var(--borde);
+  border-radius: var(--radio-chico);
+  font: 500 1rem var(--sans);
+  text-transform: uppercase;
+}
+.fila-codigo input::placeholder { text-transform: none; }
+.fila-codigo input:focus { border-color: var(--violeta); outline: none; }
+.codigo-aplicado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: .7em 1em;
+  border-radius: var(--radio-chico);
+  background: var(--lavanda-suave);
+  color: var(--violeta-oscuro);
+}
+.fila-descuento dt, .fila-descuento dd { color: var(--violeta) !important; font-weight: 700; }
+
 /* ===== Movimiento reducido ===== */
 
 @media (prefers-reduced-motion: reduce) {

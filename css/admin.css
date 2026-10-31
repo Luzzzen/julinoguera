@@ -328,3 +328,8 @@ input.mini { width: 70px; padding: .4em .6em; border: 1.5px solid var(--borde); 
   .tabla-horarios > span:first-child { display: none; }
   .tabla-horarios .dia { grid-column: 1 / -1; margin-top: 6px; }
 }
+
+/* Códigos */
+.input-codigo { text-transform: uppercase; font-weight: 700; letter-spacing: .03em; }
+.campo select { width: 100%; padding: .75em .9em; border: 1.5px solid var(--borde); border-radius: var(--radio-chico); background: var(--blanco); font: 400 1rem var(--sans); }
+.fila-acciones .insignia { align-self: center; margin-right: 4px; }

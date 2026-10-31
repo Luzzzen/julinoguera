@@ -583,7 +583,68 @@ const subtotalCarrito = () => carrito.reduce((t, i) => t + itemVigente(i).precio
 
 function costoEnvio(subtotal, zona) {
   if (!zona) return 0;
-  return subtotal > CONFIG.envioGratisDesde ? 0 : zona.precio;
+  return CONFIG.envioGratisDesde && subtotal > CONFIG.envioGratisDesde ? 0 : zona.precio;
+}
+
+/* ===== Código de descuento =====
+   La tienda no ve la lista de códigos: le pregunta a la base si uno vale. */
+
+const CLAVE_CODIGO = 'jn-codigo';
+let codigo = null;          // { codigo, tipo, valor, minimo } validado
+let mensajeCodigo = '';
+
+async function consultarCodigo(texto) {
+  const { url, key } = CONFIG.supabase;
+  const r = await fetch(`${url}/rest/v1/rpc/validar_codigo`, {
+    method: 'POST',
+    headers: { apikey: key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_codigo: texto })
+  });
+  if (!r.ok) throw new Error('codigo ' + r.status);
+  const filas = await r.json();
+  return filas[0] || null;
+}
+
+function guardarCodigo() {
+  try { codigo ? localStorage.setItem(CLAVE_CODIGO, codigo.codigo) : localStorage.removeItem(CLAVE_CODIGO); } catch {}
+}
+
+const etiquetaCodigo = c => c.tipo === 'porcentaje' ? `−${c.valor}%` : `−${formatoPrecio(c.valor)}`;
+
+// Se aplica solo sobre los productos (con las ofertas ya descontadas), nunca sobre el envío
+function descuentoCodigo(subtotal) {
+  if (!codigo || (codigo.minimo && subtotal < codigo.minimo)) return 0;
+  return codigo.tipo === 'porcentaje' ? Math.round(subtotal * codigo.valor / 100) : Math.min(codigo.valor, subtotal);
+}
+
+async function aplicarCodigo() {
+  const input = $('#input-codigo');
+  const texto = input.value.trim();
+  if (!texto) return;
+  const boton = $('#aplicar-codigo');
+  boton.disabled = true; boton.textContent = 'Aplicando…';
+  try {
+    const c = await consultarCodigo(texto);
+    if (c) { codigo = c; mensajeCodigo = ''; }
+    else { mensajeCodigo = `El código "${texto}" no existe o ya no está vigente.`; }
+  } catch {
+    mensajeCodigo = 'No pudimos revisar el código. Probá de nuevo en un ratito.';
+  }
+  guardarCodigo();
+  renderCarrito();
+  if (!codigo) { const i = $('#input-codigo'); if (i) { i.value = texto; i.focus(); } }
+}
+
+// Al entrar, vuelve a chequear el código guardado (puede haber vencido)
+async function revalidarCodigo() {
+  let guardado = null;
+  try { guardado = localStorage.getItem(CLAVE_CODIGO); } catch {}
+  if (!guardado) return;
+  try {
+    codigo = await consultarCodigo(guardado);
+    if (!codigo) mensajeCodigo = `El código ${guardado} ya no está vigente.`;
+  } catch { codigo = null; }
+  guardarCodigo();
 }
 
 function abrirCarrito() {
@@ -643,6 +704,20 @@ function renderCarrito() {
       }).join('')}
     </ul>
     <p class="vaciar-fila"><button id="vaciar" type="button" class="enlace">Vaciar pedido</button></p>
+
+    <div class="bloque-codigo">
+      ${codigo
+        ? `<div class="codigo-aplicado">
+             <span>Código <strong>${esc(codigo.codigo)}</strong> (${etiquetaCodigo(codigo)})</span>
+             <button type="button" id="quitar-codigo" class="enlace">Quitar</button>
+           </div>`
+        : `<label class="campo" for="input-codigo"><span>¿Tenés un código de descuento?</span></label>
+           <div class="fila-codigo">
+             <input id="input-codigo" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Ej.: LANZAMIENTO">
+             <button type="button" id="aplicar-codigo" class="boton boton-chico boton-secundario">Aplicar</button>
+           </div>`}
+      <p id="mensaje-codigo" class="grupo-nota aviso-dia"${mensajeCodigo ? '' : ' hidden'}>${esc(mensajeCodigo)}</p>
+    </div>
 
     <form id="form-entrega" class="entrega" novalidate>
       <h3>Entrega</h3>
@@ -722,6 +797,13 @@ function renderCarrito() {
     guardarCarrito(); renderCarrito();
   }));
   activarLinksWhatsApp(cuerpo);
+  const aplicar = $('#aplicar-codigo', cuerpo);
+  if (aplicar) {
+    aplicar.addEventListener('click', aplicarCodigo);
+    $('#input-codigo', cuerpo).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); aplicarCodigo(); } });
+  }
+  const quitar = $('#quitar-codigo', cuerpo);
+  if (quitar) quitar.addEventListener('click', () => { codigo = null; mensajeCodigo = ''; guardarCodigo(); renderCarrito(); });
   $('#vaciar', cuerpo).addEventListener('click', () => {
     if (!confirm('¿Vaciar el pedido?')) return;
     carrito = [];
@@ -813,15 +895,26 @@ function actualizarEntrega(franjaPrevia) {
   const subtotal = subtotalCarrito();
   const zona = envio ? CONFIG.zonasEnvio.find(z => z.id === form.zona.value) : null;
   const envioCosto = costoEnvio(subtotal, zona);
-  const gratis = subtotal > CONFIG.envioGratisDesde;
+  const gratis = !!CONFIG.envioGratisDesde && subtotal > CONFIG.envioGratisDesde;
+  const descuento = descuentoCodigo(subtotal);
 
   $('#subtotal').textContent = formatoPrecio(subtotal);
+  $('#fila-descuento').hidden = !descuento;
+  if (codigo) $('#etiqueta-descuento').textContent = `Código ${codigo.codigo}`;
+  $('#monto-descuento').textContent = '−' + formatoPrecio(descuento);
   $('#fila-envio').hidden = !envio;
   $('#costo-envio').textContent = !zona ? (gratis ? 'Sin cargo' : 'Elegí la zona') : (envioCosto ? formatoPrecio(envioCosto) : 'Sin cargo');
-  $('#total').textContent = formatoPrecio(subtotal + envioCosto);
+  $('#total').textContent = formatoPrecio(subtotal - descuento + envioCosto);
+
+  // Código con compra mínima que todavía no se alcanza
+  const msg = $('#mensaje-codigo');
+  if (msg && codigo && codigo.minimo && subtotal < codigo.minimo) {
+    msg.textContent = `El código ${codigo.codigo} es para compras desde ${formatoPrecio(codigo.minimo)} (te faltan ${formatoPrecio(codigo.minimo - subtotal)}).`;
+    msg.hidden = false;
+  } else if (msg && codigo) msg.hidden = true;
 
   const pista = $('#pista-envio');
-  pista.hidden = !envio;
+  pista.hidden = !envio || !CONFIG.envioGratisDesde;
   pista.textContent = gratis
     ? 'Tu pedido tiene envío sin cargo.'
     : `Envío sin cargo en compras superiores a ${formatoPrecio(CONFIG.envioGratisDesde)} (te faltan ${formatoPrecio(CONFIG.envioGratisDesde - subtotal)}).`;
@@ -869,7 +962,8 @@ function enviarPedido() {
   const subtotal = subtotalCarrito();
   const zona = envio ? CONFIG.zonasEnvio.find(z => z.id === f.zona.value) : null;
   const envioCosto = costoEnvio(subtotal, zona);
-  const total = subtotal + envioCosto;
+  const descuento = descuentoCodigo(subtotal);
+  const total = subtotal - descuento + envioCosto;
   const fechaTexto = textoFecha(f.fecha.value);
   const tercero = f.tercero.value.trim();
 
@@ -883,6 +977,7 @@ function enviarPedido() {
     }),
     '',
     `Subtotal: ${formatoPrecio(subtotal)}`,
+    ...(descuento ? [`Código ${codigo.codigo} (${etiquetaCodigo(codigo)}): −${formatoPrecio(descuento)}`] : []),
     ...(zona ? [`Envío (${zona.nombre} · ${zona.barrios}): ${envioCosto ? formatoPrecio(envioCosto) : 'sin cargo'}`] : []),
     `*Total: ${formatoPrecio(total)}*`,
     '',
@@ -908,6 +1003,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   depurarCarrito();
   avisoQuitados = '';
+  revalidarCodigo();
   renderCatalogo();
   actualizarBadge();
 

@@ -31,7 +31,7 @@ window.CONFIG = {
     tiktok: 'https://www.tiktok.com/@julinoguerapasteleria'
   },
 
-  envioGratisDesde: 100000,
+  envioGratisDesde: null,   // null = no hay envío sin cargo automático
   zonasEnvio: [
     { id: 'z1', nombre: 'Zona 1', barrios: 'San Justo, Villa Luzuriaga', precio: 3000 },
     { id: 'z2', nombre: 'Zona 2', barrios: 'Ramos Mejía, Haedo',         precio: 4000 },

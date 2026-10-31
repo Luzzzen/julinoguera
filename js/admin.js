@@ -302,7 +302,7 @@ $$('.admin-tabs button').forEach(b => b.addEventListener('click', async () => {
 function renderTab() {
   $$('.admin-tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === estado.tab ? 'page' : 'false'));
   const cont = $('#admin-contenido');
-  ({ productos: tabProductos, categorias: tabCategorias, adicionales: tabAdicionales,
+  ({ productos: tabProductos, categorias: tabCategorias, adicionales: tabAdicionales, codigos: tabCodigos,
      general: tabGeneral, personalizada: tabPersonalizada })[estado.tab](cont);
   window.scrollTo(0, 0);
 }
@@ -865,6 +865,106 @@ function tabAdicionales(cont) {
 }
 
 /* =====================================================================
+   CÓDIGOS DE DESCUENTO
+   ===================================================================== */
+
+// datetime-local ↔ fecha guardada (con zona horaria)
+function aLocal(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+const deLocal = v => v ? new Date(v).toISOString() : null;
+
+async function tabCodigos(cont) {
+  cont.innerHTML = '<p class="cargando">Cargando…</p>';
+  const { data, error } = await sb.from('codigos').select('*').order('creado');
+  if (error) { cont.innerHTML = `<p class="aviso-error">${esc(mensajeError(error))}</p>`; return; }
+  const originales = data.map(c => c.codigo);
+  const filas = copia(data);
+  const barra = barraGuardar(async () => {
+    for (const c of filas) {
+      c.codigo = String(c.codigo || '').trim().toUpperCase().replace(/\s+/g, '');
+      if (!c.codigo) { aviso('Hay un código sin nombre.', 'error'); return false; }
+      if (!(c.valor > 0)) { aviso(`Al código ${c.codigo} le falta el valor.`, 'error'); return false; }
+      if (c.tipo === 'porcentaje' && c.valor > 100) { aviso(`El ${c.codigo} no puede ser más de 100%.`, 'error'); return false; }
+    }
+    const nombres = filas.map(c => c.codigo);
+    if (new Set(nombres).size !== nombres.length) { aviso('Hay dos códigos con el mismo nombre.', 'error'); return false; }
+    const borrar = originales.filter(c => !nombres.includes(c));
+    if (borrar.length) {
+      const { error } = await sb.from('codigos').delete().in('codigo', borrar);
+      if (error) { aviso(mensajeError(error), 'error'); return false; }
+    }
+    if (!filas.length) { aviso('Códigos guardados'); return true; }
+    return guardar(sb.from('codigos').upsert(filas.map(c => ({
+      codigo: c.codigo, tipo: c.tipo, valor: c.valor, activo: c.activo !== false,
+      vence: c.vence || null, minimo: c.minimo || null
+    }))), 'Códigos guardados');
+  });
+
+  function estadoDe(c) {
+    if (c.activo === false) return '<span class="insignia gris">Apagado</span>';
+    if (c.vence && new Date(c.vence) <= new Date()) return '<span class="insignia gris">Vencido</span>';
+    return '<span class="insignia">Activo</span>';
+  }
+
+  function render() {
+    cont.innerHTML = `
+      <div class="admin-titulo"><h1>Códigos de descuento</h1></div>
+      <p class="ayuda">El cliente lo escribe en el carrito (da igual mayúsculas o minúsculas). Se descuenta solo de los productos, no del envío, y se suma a las ofertas. Si ponés vencimiento, se apaga solo a esa hora.</p>
+      <div class="tarjetas-edit">
+        ${filas.map((c, i) => `
+          <div class="tarjeta-edit">
+            <div class="grupo-cabecera">
+              <label class="switch-etiqueta"><input type="checkbox" class="switch" data-k="activo" data-i="${i}"${c.activo !== false ? ' checked' : ''}><span>Activo</span></label>
+              <div class="fila-acciones">${estadoDe(c)} <button type="button" class="borrar" data-borrar="${i}" aria-label="Eliminar">✕</button></div>
+            </div>
+            <div class="campos-fila">
+              <label class="campo"><span>Código</span><input data-k="codigo" data-i="${i}" value="${esc(c.codigo || '')}" placeholder="LANZAMIENTO" class="input-codigo"></label>
+              <label class="campo"><span>Tipo</span>
+                <select data-k="tipo" data-i="${i}">
+                  <option value="porcentaje"${c.tipo === 'porcentaje' ? ' selected' : ''}>Porcentaje (%)</option>
+                  <option value="monto"${c.tipo === 'monto' ? ' selected' : ''}>Monto fijo ($)</option>
+                </select></label>
+              <label class="campo"><span>${c.tipo === 'monto' ? 'Monto ($)' : 'Porcentaje (%)'}</span><input type="number" min="1" inputmode="numeric" data-k="valor" data-i="${i}" value="${c.valor ?? ''}"></label>
+            </div>
+            <div class="campos-fila">
+              <label class="campo"><span>Vence <small>opcional</small></span><input type="datetime-local" data-k="vence" data-i="${i}" value="${aLocal(c.vence)}"></label>
+              <label class="campo"><span>Compra mínima <small>opcional</small></span><input type="number" min="1" inputmode="numeric" data-k="minimo" data-i="${i}" value="${c.minimo ?? ''}" placeholder="Sin mínimo"></label>
+            </div>
+          </div>`).join('') || '<p class="ayuda">Todavía no hay códigos.</p>'}
+      </div>
+      <button type="button" class="boton boton-secundario" id="nuevo-codigo">+ Nuevo código</button>
+      ${barra.html}`;
+
+    barra.activar(cont);
+    marcarSucio(estado.sucio);
+    $$('[data-k]', cont).forEach(el => el.addEventListener(el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input', () => {
+      const c = filas[el.dataset.i], k = el.dataset.k;
+      if (k === 'activo') c.activo = el.checked;
+      else if (k === 'valor' || k === 'minimo') c[k] = numero(el.value);
+      else if (k === 'vence') c.vence = deLocal(el.value);
+      else if (k === 'codigo') { el.value = el.value.toUpperCase().replace(/\s+/g, ''); c.codigo = el.value; }
+      else c[k] = el.value;
+      marcarSucio();
+      if (k === 'tipo' || k === 'activo' || k === 'vence') render();
+    }));
+    $$('[data-borrar]', cont).forEach(b => b.addEventListener('click', () => {
+      const c = filas[b.dataset.borrar];
+      if (!confirm(`¿Eliminar el código ${c.codigo || ''}?`)) return;
+      filas.splice(b.dataset.borrar, 1); marcarSucio(); render();
+    }));
+    $('#nuevo-codigo', cont).addEventListener('click', () => {
+      filas.push({ codigo: '', tipo: 'porcentaje', valor: null, activo: true, vence: null, minimo: null });
+      marcarSucio(); render();
+      const cods = $$('[data-k="codigo"]', cont); cods[cods.length - 1].focus();
+    });
+  }
+  render();
+}
+
+/* =====================================================================
    ENVÍOS Y HORARIOS
    ===================================================================== */
 
@@ -931,7 +1031,7 @@ function tabGeneral(cont) {
       <section class="tarjeta-edit">
         <h2>Zonas de envío</h2>
         <div id="filas-zonas"></div>
-        <label class="campo campo-corto"><span>Envío sin cargo en compras mayores a</span><input type="number" min="0" data-g="envioGratisDesde" value="${g.envioGratisDesde ?? ''}"></label>
+        <label class="campo campo-corto"><span>Envío sin cargo en compras mayores a <small>vacío = no hay</small></span><input type="number" min="0" data-g="envioGratisDesde" value="${g.envioGratisDesde ?? ''}"></label>
       </section>
 
       <section class="tarjeta-edit">

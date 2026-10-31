@@ -48,8 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.boton-wa').forEach(btn => btn.insertAdjacentHTML('afterbegin', ICONO_WA));
 
   document.querySelectorAll('[data-direccion]').forEach(el => el.textContent = CONFIG.direccionRetiro);
-  document.querySelectorAll('[data-envio-gratis]').forEach(el => el.textContent = formatoPrecio(CONFIG.envioGratisDesde));
-  document.querySelectorAll('[data-rango-envio]').forEach(el => {
+    document.querySelectorAll('[data-rango-envio]').forEach(el => {
     const precios = CONFIG.zonasEnvio.map(z => z.precio);
     el.textContent = `entre ${formatoPrecio(Math.min(...precios))} y ${formatoPrecio(Math.max(...precios))}`;
   });
