@@ -713,7 +713,7 @@ function renderCarrito() {
            </div>`
         : `<label class="campo" for="input-codigo"><span>¿Tenés un código de descuento?</span></label>
            <div class="fila-codigo">
-             <input id="input-codigo" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Ej.: LANZAMIENTO">
+             <input id="input-codigo" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false">
              <button type="button" id="aplicar-codigo" class="boton boton-chico boton-secundario">Aplicar</button>
            </div>`}
       <p id="mensaje-codigo" class="grupo-nota aviso-dia"${mensajeCodigo ? '' : ' hidden'}>${esc(mensajeCodigo)}</p>

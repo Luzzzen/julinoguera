@@ -561,6 +561,7 @@ img { max-width: 100%; display: block; }
 
 .totales { margin: 0 0 10px; }
 .totales div { display: flex; justify-content: space-between; padding: 3px 0; }
+.totales div[hidden] { display: none; }
 .totales dt { color: var(--tinta-suave); }
 .totales dd { margin: 0; font-weight: 500; }
 .totales .total dt, .totales .total dd { color: var(--violeta-oscuro); font-weight: 700; font-size: 1.2rem; }
