@@ -19,9 +19,16 @@ window.CONFIG = {
   diasCerrados: [0],
   fechasBloqueadas: [],
 
+  // Por día de la semana: 0 = domingo, 1 = lunes … 6 = sábado
   horarios: {
-    retiro: { semana: ['11 a 13 hs', '15 a 17 hs'], sabado: ['11 a 13 hs'] },
-    envio:  { semana: ['Despacho 10 hs', 'Despacho 17 hs'], sabado: ['Despacho 10 hs'] }
+    retiro: { 1: ['15 a 17 hs'], 2: ['11 a 13 hs', '15 a 17 hs'], 3: ['11 a 13 hs', '15 a 17 hs'],
+              4: ['11 a 13 hs', '15 a 17 hs'], 5: ['11 a 13 hs', '15 a 17 hs'], 6: ['11 a 13 hs'] },
+    envio:  { 2: ['10 a 12 hs'], 3: ['10 a 12 hs'], 4: ['10 a 12 hs'], 5: ['10 a 12 hs'], 6: ['12 a 14 hs'] }
+  },
+
+  redes: {
+    instagram: 'https://www.instagram.com/julinoguerapasteleria/',
+    tiktok: 'https://www.tiktok.com/@julinoguerapasteleria'
   },
 
   envioGratisDesde: 100000,

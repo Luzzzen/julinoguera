@@ -53,6 +53,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const precios = CONFIG.zonasEnvio.map(z => z.precio);
     el.textContent = `entre ${formatoPrecio(Math.min(...precios))} y ${formatoPrecio(Math.max(...precios))}`;
   });
+  document.querySelectorAll('[data-red]').forEach(a => {
+    a.href = (CONFIG.redes || {})[a.dataset.red] || '#';
+    a.target = '_blank';
+    a.rel = 'noopener';
+  });
   const anio = document.getElementById('anio');
   if (anio) anio.textContent = new Date().getFullYear();
 });

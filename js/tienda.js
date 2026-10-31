@@ -81,11 +81,24 @@ function esVisible(op, sel) {
   return !op.visibleSi || sel[op.visibleSi.opcion] === op.visibleSi.valor;
 }
 
-function cuantosElegir(prod, op, sel) {
+// "porCaja": el máximo se multiplica por la cantidad (2 cajas → el doble de sabores)
+function cuantosPorUnidad(prod, op, sel) {
   if (op.elegir) return op.elegir;
   const base = buscarOpcion(prod, op.segun);
   const v = sel[op.segun] && buscarValor(base, sel[op.segun]);
   return v ? v.elegir : 0;
+}
+function cuantosElegir(prod, op, sel, cantidad = 1) {
+  const n = cuantosPorUnidad(prod, op, sel);
+  return op.porCaja ? n * cantidad : n;
+}
+// Mínima cantidad de cajas para que entren los sabores elegidos
+function cantidadMinima(prod, sel) {
+  return prod.opciones.reduce((min, op) => {
+    if (op.tipo !== 'multiple' || !op.porCaja || !Array.isArray(sel[op.id])) return min;
+    const n = cuantosPorUnidad(prod, op, sel);
+    return n ? Math.max(min, Math.ceil(sel[op.id].length / n)) : min;
+  }, 1);
 }
 
 // Oferta: el porcentaje se aplica al producto (no a los adicionales)
@@ -299,7 +312,7 @@ function fechaFijaHTML(prod) {
           <input type="radio" name="__fecha" value="${fecha}"><span>${textoFecha(fecha)}</span>
         </label>
       </div>
-      <p class="grupo-nota">Retiro de ${f.retiro.join(' / ')} · envío ${f.envio.join(' / ').toLowerCase()}</p>
+      <p class="grupo-nota">${f.retiro.length ? 'Retiro: ' + esc(f.retiro.join(' / ')) : ''}${f.retiro.length && f.envio.length ? ' · ' : ''}${f.envio.length ? 'Envío: ' + esc(f.envio.join(' / ')) : ''}</p>
     </fieldset>`;
 }
 
@@ -379,6 +392,7 @@ function actualizarConfigurador() {
   const { prod } = actual;
   const form = $('#configurador form');
   const { sel, adic } = leerSeleccion(form, prod);
+  const cantidad = Math.min(20, Math.max(1, Number(form.cantidad.value) || 1));
 
   prod.opciones.forEach(op => {
     const grupo = $(`[data-opcion="${op.id}"]`, form);
@@ -390,15 +404,18 @@ function actualizarConfigurador() {
     }
 
     if (op.tipo === 'multiple') {
-      const n = cuantosElegir(prod, op, sel);
+      const n = cuantosElegir(prod, op, sel, cantidad);
       const marcados = $$('input:checked', grupo);
       marcados.slice(n).forEach(i => i.checked = false);
       const total = Math.min(marcados.length, n);
       $$('input', grupo).forEach(i => i.disabled = !n || (!i.checked && total >= n));
       const base = op.segun && buscarOpcion(prod, op.segun);
+      const porUnidad = cuantosPorUnidad(prod, op, sel);
       $('.grupo-ayuda', grupo).textContent = !n
         ? `elegí primero ${base.nombre.toLowerCase()}`
-        : `${op.hasta ? 'hasta' : 'elegí'} ${n} · ${total}/${n}`;
+        : op.porCaja
+          ? `hasta ${porUnidad} por caja · ${total}/${n}${cantidad === 1 ? ' · sumá cajas para elegir más' : ''}`
+          : `${op.hasta ? 'hasta' : 'elegí'} ${n} · ${total}/${n}`;
       sel[op.id] = $$('input:checked', grupo).map(i => i.value);
     }
 
@@ -413,7 +430,6 @@ function actualizarConfigurador() {
     }
   });
 
-  const cantidad = Math.min(20, Math.max(1, Number(form.cantidad.value) || 1));
   const fecha = prod.entregaFija ? ($('input[name="__fecha"]:checked', form) || {}).value || null : null;
   Object.assign(actual, { sel, adic, cantidad, fecha });
 
@@ -421,15 +437,15 @@ function actualizarConfigurador() {
   $('.aviso-error', form).hidden = true;
 }
 
-function faltantes(prod, sel, fecha) {
+function faltantes(prod, sel, fecha, cantidad = 1) {
   const lista = [];
   if (prod.entregaFija && !fecha) lista.push('la fecha de entrega');
   prod.opciones.forEach(op => {
     if (!esVisible(op, sel)) return;
     let falta;
     if (op.tipo === 'multiple') {
-      const n = cuantosElegir(prod, op, sel);
-      falta = op.hasta ? sel[op.id].length < 1 : sel[op.id].length !== n;
+      const n = cuantosElegir(prod, op, sel, cantidad);
+      falta = op.hasta ? (sel[op.id].length < 1 || sel[op.id].length > n) : sel[op.id].length !== n;
     } else if (op.tipo === 'cantidades') {
       falta = totalCantidades(sel[op.id]) !== op.elegir;
     } else {
@@ -471,7 +487,7 @@ function itemVigente(item) {
       if (op.tipo === 'cantidades') return v && Object.keys(v).every(id => buscarValor(op, id));
       return v && buscarValor(op, v);
     }) && item.adic.every(id => ADICIONALES[id] && (prod.adicionales || []).includes(id))
-      && !faltantes(prod, item.sel, prod.entregaFija ? entregaSemanal(prod).fecha : null).length;
+      && !faltantes(prod, item.sel, prod.entregaFija ? entregaSemanal(prod).fecha : null, item.cantidad).length;
     if (!ok) return null;
   } catch { return null; }
   return {
@@ -498,7 +514,7 @@ const firmaDe = (id, sel, adic) => id + '|' + JSON.stringify(sel) + '|' + [...ad
 
 function agregarAlCarrito() {
   const { prod, sel, adic, cantidad, fecha } = actual;
-  const falta = faltantes(prod, sel, fecha);
+  const falta = faltantes(prod, sel, fecha, cantidad);
   const form = $('#configurador form');
   if (falta.length) {
     const aviso = $('.aviso-error', form);
@@ -553,11 +569,14 @@ function entregaFijaDelPedido() {
   return { ...prod.entregaFija, fecha: entregaSemanal(prod).fecha, nombre: prod.nombre };
 }
 
+// Horarios por día de la semana (0 = domingo … 6 = sábado). null = falta elegir fecha.
 function franjasPara(modalidad, iso, fija) {
-  if (fija) return fija[modalidad];
-  if (!iso) return [];
-  const h = CONFIG.horarios[modalidad];
-  return deIso(iso).getDay() === 6 ? h.sabado : h.semana;
+  if (fija) return fija[modalidad] || [];
+  if (!iso) return null;
+  const h = (CONFIG.horarios || {})[modalidad] || {};
+  const dia = deIso(iso).getDay();
+  if (h.semana) return (dia === 6 ? h.sabado : h.semana) || [];   // formato anterior
+  return h[dia] || [];
 }
 
 const subtotalCarrito = () => carrito.reduce((t, i) => t + itemVigente(i).precio * i.cantidad, 0);
@@ -613,7 +632,7 @@ function renderCarrito() {
           </div>
           <div class="item-acciones">
             <div class="contador contador-chico">
-              <button type="button" data-item="${i}" data-delta="-1" aria-label="Restar">−</button>
+              <button type="button" data-item="${i}" data-delta="-1" aria-label="Restar"${item.cantidad > 1 && item.cantidad - 1 < cantidadMinima(v.prod, item.sel) ? ' disabled title="Con menos cajas no entran los sabores elegidos: quitalo y volvé a elegir"' : ''}>−</button>
               <output>${item.cantidad}</output>
               <button type="button" data-item="${i}" data-delta="1" aria-label="Sumar">+</button>
             </div>
@@ -671,6 +690,7 @@ function renderCarrito() {
       <fieldset class="grupo">
         <legend id="leyenda-franja">Horario</legend>
         <div class="opciones" id="franjas"></div>
+        <p class="grupo-nota" id="nota-envio" hidden>Lo vas a recibir dentro de ese rango horario. Te avisamos cuando estemos en camino a tu dirección.</p>
         <p class="grupo-nota">¿Necesitás otro horario? <a data-wa="¡Hola Juli! Quiero hacer un pedido pero necesito otro horario de entrega.">Consultanos</a>.</p>
       </fieldset>
 
@@ -750,7 +770,7 @@ function renderCalendario() {
     <div class="cal-semana" aria-hidden="true"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
     <div class="cal-dias">${celdas}</div>
     <p class="cal-elegida">${elegida ? textoFecha(elegida) : 'Elegí un día'}</p>
-    <p class="grupo-nota">Pedidos con 24 hs de anticipación (hasta las ${CONFIG.horaCorte} hs del día anterior). Sábados con horario reducido, domingos cerrado.</p>`;
+    <p class="grupo-nota">Pedidos con 24 hs de anticipación (hasta las ${CONFIG.horaCorte} hs del día anterior). Domingos cerrado.</p>`;
 
   $$('[data-mes]', cont).forEach(b => b.addEventListener('click', () => {
     mesVisible.setMonth(mesVisible.getMonth() + Number(b.dataset.mes));
@@ -776,16 +796,19 @@ function actualizarEntrega(franjaPrevia) {
   const franjas = franjasPara(modalidad, form.fecha.value, fija);
   const contenedor = $('#franjas');
   const elegida = franjaPrevia || (form.franja && form.franja.value);
-  const clave = modalidad + '|' + franjas.join(',');
+  const clave = modalidad + '|' + (franjas ? franjas.join(',') : 'sin-fecha');
   if (contenedor.dataset.clave !== clave) {
     contenedor.dataset.clave = clave;
-    contenedor.innerHTML = franjas.length
-      ? franjas.map(f => `<label class="opcion">
-          <input type="radio" name="franja" value="${f}"${f === elegida ? ' checked' : ''}><span>${f}</span>
-        </label>`).join('')
-      : '<p class="grupo-nota">Elegí primero la fecha.</p>';
+    contenedor.innerHTML = !franjas
+      ? '<p class="grupo-nota">Elegí primero la fecha.</p>'
+      : franjas.length
+        ? franjas.map(f => `<label class="opcion">
+            <input type="radio" name="franja" value="${esc(f)}"${f === elegida ? ' checked' : ''}><span>${esc(f)}</span>
+          </label>`).join('')
+        : `<p class="grupo-nota aviso-dia">${envio ? 'Ese día no hacemos envíos. Elegí otro día o retiralo por el taller.' : 'Ese día no hay retiro. Elegí otro día o pedí envío.'}</p>`;
   }
-  $('#leyenda-franja').textContent = envio ? 'Horario de despacho' : 'Horario de retiro';
+  $('#leyenda-franja').textContent = envio ? 'Horario de envío' : 'Horario de retiro';
+  $('#nota-envio').hidden = !envio;
 
   const subtotal = subtotalCarrito();
   const zona = envio ? CONFIG.zonasEnvio.find(z => z.id === form.zona.value) : null;

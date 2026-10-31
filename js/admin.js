@@ -465,7 +465,7 @@ function abrirEditor(id) {
             <label class="campo campo-corto"><span>Día de entrega</span>
               <select name="diaEntrega">${DIAS.map((dia, i) => `<option value="${i}"${(p.entrega_semanal ? p.entrega_semanal.diaEntrega : 5) === i ? ' selected' : ''}>${dia}</option>`).join('')}</select></label>
             <label class="campo"><span>Horarios de retiro ese día <small>separados por coma</small></span><input name="semRetiro" value="${esc((p.entrega_semanal ? p.entrega_semanal.retiro : ['15 a 17 hs']).join(', '))}"></label>
-            <label class="campo"><span>Horarios de envío ese día <small>separados por coma</small></span><input name="semEnvio" value="${esc((p.entrega_semanal ? p.entrega_semanal.envio : ['Despacho 17 hs']).join(', '))}"></label>
+            <label class="campo"><span>Horarios de envío ese día <small>separados por coma</small></span><input name="semEnvio" value="${esc((p.entrega_semanal ? p.entrega_semanal.envio : ['10 a 12 hs']).join(', '))}"></label>
             <p class="ayuda">La fecha se calcula sola: el próximo día de entrega que respete la anticipación. Si alguien lo pide junto con otras cosas, todo el pedido se entrega ese día.</p>
           </div>
         </section>
@@ -576,6 +576,7 @@ function renderGrupos() {
             Depende de lo que elija en
             <select data-grupo-segun="${gi}">${candidatos.map(o => `<option value="${esc(o.id)}"${op.segun === o.id ? ' selected' : ''}>${esc(o.nombre || 'grupo sin nombre')}</option>`).join('')}</select></label>` : ''}
           <label class="radio-linea"><input type="checkbox" data-grupo-hasta="${gi}"${op.hasta ? ' checked' : ''}> Puede elegir menos (es un máximo)</label>
+          <label class="radio-linea"><input type="checkbox" data-grupo-porcaja="${gi}"${op.porCaja ? ' checked' : ''}> Se multiplica por la cantidad (ej.: 2 cajas → el doble de sabores)</label>
         </div>` : ''}
       ${op.tipo === 'cantidades' ? `
         <div class="sub-bloque">
@@ -603,13 +604,14 @@ function renderGrupos() {
   g('data-grupo-nombre', (op, el) => op.nombre = el.value);
   g('data-grupo-tipo', (op, el) => {
     op.tipo = el.value;
-    if (op.tipo === 'unica') { delete op.elegir; delete op.segun; delete op.hasta; }
-    if (op.tipo === 'cantidades') { delete op.segun; delete op.hasta; op.elegir = op.elegir || 2; }
+    if (op.tipo === 'unica') { delete op.elegir; delete op.segun; delete op.hasta; delete op.porCaja; }
+    if (op.tipo === 'cantidades') { delete op.segun; delete op.hasta; delete op.porCaja; op.elegir = op.elegir || 2; }
     if (op.tipo === 'multiple') { op.elegir = op.elegir || 2; }
     renderGrupos();
   });
   g('data-grupo-elegir', (op, el) => op.elegir = numero(el.value));
   g('data-grupo-hasta', (op, el) => op.hasta = el.checked);
+  g('data-grupo-porcaja', (op, el) => { if (el.checked) op.porCaja = true; else delete op.porCaja; });
   g('data-grupo-segun', (op, el) => { op.segun = el.value; renderGrupos(); });
   g('data-grupo-modo', (op, el) => {
     if (el.value === 'segun') {
@@ -871,7 +873,16 @@ function tabGeneral(cont) {
   g.zonasEnvio = g.zonasEnvio || [];
   g.fechasBloqueadas = (g.fechasBloqueadas || []).filter(f => f >= new Date().toISOString().slice(0, 10));
   g.diasCerrados = g.diasCerrados || [];
-  g.horarios = g.horarios || { retiro: { semana: [], sabado: [] }, envio: { semana: [], sabado: [] } };
+  // Horarios por día (0 = domingo … 6 = sábado). Convierte el formato viejo (semana/sábado).
+  g.horarios = g.horarios || {};
+  ['retiro', 'envio'].forEach(m => {
+    const h = g.horarios[m] || {};
+    const porDia = {};
+    for (let d = 0; d < 7; d++) {
+      porDia[d] = h.semana ? (d === 6 ? h.sabado || [] : d === 0 ? [] : h.semana) : (h[d] || []);
+    }
+    g.horarios[m] = porDia;
+  });
 
   const barra = barraGuardar(async () => {
     if (!/^\d{10,15}$/.test(g.whatsapp || '')) { aviso('El WhatsApp tiene que ser solo números, con código de país (ej.: 5491112345678).', 'error'); return false; }
@@ -906,11 +917,15 @@ function tabGeneral(cont) {
       </section>
 
       <section class="tarjeta-edit">
-        <h2>Horarios <small>separados por coma</small></h2>
-        <label class="campo"><span>Retiro · lunes a viernes</span><input data-h="retiro.semana" value="${esc(g.horarios.retiro.semana.join(', '))}"></label>
-        <label class="campo"><span>Retiro · sábados</span><input data-h="retiro.sabado" value="${esc(g.horarios.retiro.sabado.join(', '))}"></label>
-        <label class="campo"><span>Envío · lunes a viernes</span><input data-h="envio.semana" value="${esc(g.horarios.envio.semana.join(', '))}"></label>
-        <label class="campo"><span>Envío · sábados</span><input data-h="envio.sabado" value="${esc(g.horarios.envio.sabado.join(', '))}"></label>
+        <h2>Horarios por día <small>separados por coma · vacío = ese día no hay</small></h2>
+        <div class="tabla-horarios">
+          <span></span><strong>Retiro</strong><strong>Envío</strong>
+          ${[1, 2, 3, 4, 5, 6, 0].map(d => `
+            <span class="dia${g.diasCerrados.includes(d) ? ' cerrado' : ''}">${DIAS[d]}${g.diasCerrados.includes(d) ? ' <small>(cerrado)</small>' : ''}</span>
+            <input data-h="retiro.${d}" aria-label="Retiro ${DIAS[d]}" value="${esc(g.horarios.retiro[d].join(', '))}" placeholder="—">
+            <input data-h="envio.${d}" aria-label="Envío ${DIAS[d]}" value="${esc(g.horarios.envio[d].join(', '))}" placeholder="—">`).join('')}
+        </div>
+        <p class="ayuda">Ej.: <code>11 a 13 hs, 15 a 17 hs</code>. En envíos, el cliente lo recibe dentro de ese rango.</p>
       </section>
 
       <section class="tarjeta-edit">

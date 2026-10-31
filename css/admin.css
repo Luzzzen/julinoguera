@@ -309,3 +309,22 @@ input.mini { width: 70px; padding: .4em .6em; border: 1.5px solid var(--borde); 
   box-shadow: var(--sombra);
 }
 .admin-aviso.error { background: var(--error); border-radius: var(--radio-chico); }
+
+/* Horarios por día */
+.tabla-horarios { display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px 10px; align-items: center; }
+.tabla-horarios > strong { font-size: .85rem; color: var(--tinta-suave); }
+.tabla-horarios .dia { font-weight: 600; font-size: .92rem; }
+.tabla-horarios .dia.cerrado { color: var(--tinta-suave); font-weight: 400; }
+.tabla-horarios input {
+  width: 100%;
+  min-width: 0;
+  padding: .55em .7em;
+  border: 1.5px solid var(--borde);
+  border-radius: 8px;
+  font: 400 .92rem var(--sans);
+}
+@media (max-width: 520px) {
+  .tabla-horarios { grid-template-columns: 1fr 1fr; }
+  .tabla-horarios > span:first-child { display: none; }
+  .tabla-horarios .dia { grid-column: 1 / -1; margin-top: 6px; }
+}
